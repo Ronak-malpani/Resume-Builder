@@ -1,4 +1,3 @@
-```markdown
 <div align="center">
 
   <br />
@@ -95,92 +94,57 @@ resume-builder
     ├── models/                # Mongoose schemas (Resume, User)
     ├── routes/                # Express API routes
     └── server.js              # Backend entry point
-
 ```
 
----
+Getting Started
 
-## Getting Started
+Prerequisites
+  Node.js: v18 or higher
+  MongoDB: Atlas Account or local instance
+  Gemini API: Google AI Studio API Key
 
-### Prerequisites
+Installation & Setup
+1.)Clone the Repository:
+  git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
+  cd Resume-Builder
 
-* **Node.js**: v18 or higher
-* **MongoDB**: Atlas Account or local instance
-* **Gemini API**: Google AI Studio API Key
+2.)Backend Setup: Create a .env file in the server directory:
+  MONGO_URI=your_mongodb_connection_string
+  PORT=5000
+  JWT_SECRET=your_jwt_secret
+  GEMINI_API_KEY=your_gemini_api_key
 
-### Installation & Setup
+  Run the following commands:
+  cd server
+  npm install
+  npm start
 
-1. **Clone the Repository:**
-```bash
-git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
-cd Resume-Builder
+3.)Frontend Setup: Create a .env file in the client directory:
+  VITE_API_URL=http://localhost:5000
 
-```
+  Run the following commands:
+  cd ../client
+  npm install
+  npm run dev
 
+  Roadmap
+[x] AI Resume Parsing (PDF to JSON)
 
-2. **Backend Setup:**
-Create a `.env` file in the `server` directory:
-```env
-MONGO_URI=your_mongodb_connection_string
-PORT=5000
-JWT_SECRET=your_jwt_secret
-GEMINI_API_KEY=your_gemini_api_key
+[x] ATS Scoring & Feedback System
 
-```
+[x] AI Professional Summary Enhancer
 
+[x] Multi-resume Dashboard Management
 
-Run the following commands:
-```bash
-cd server
-npm install
-npm start
+[ ] Custom Template Color Themes
 
-```
+[ ] LinkedIn Profile URL Parsing
 
+License
+Distributed under the MIT License. See LICENSE for more information.
 
-3. **Frontend Setup:**
-Create a `.env` file in the `client` directory:
-```env
-VITE_API_URL=http://localhost:5000
+Contact
+Ronak Malpani - malpanironak11@gmail.com
 
-```
+Project Link: https://github.com/Ronak-malpani/Resume-Builder
 
-
-Run the following commands:
-```bash
-cd ../client
-npm install
-npm run dev
-
-```
-
-
-
----
-
-## Roadmap
-
-* [x] AI Resume Parsing (PDF to JSON)
-* [x] ATS Scoring & Feedback System
-* [x] AI Professional Summary Enhancer
-* [x] Multi-resume Dashboard Management
-* [ ] Custom Template Color Themes
-* [ ] LinkedIn Profile URL Parsing
-
----
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-## Contact
-
-**Ronak Malpani** - [malpanironak11@gmail.com](mailto:malpanironak11@gmail.com)
-
-Project Link: [https://github.com/Ronak-malpani/Resume-Builder](https://github.com/Ronak-malpani/Resume-Builder)
-
-```
-
-```
