@@ -95,21 +95,21 @@ resume-builder
     ├── routes/                # Express API routes
     └── server.js              # Backend entry point
 
----
 
-## Getting Started
 
-### Prerequisites
+ Getting Started
+
+ Prerequisites
 
 * Node.js: v18 or higher
 * MongoDB: Atlas Account or local instance
 * Gemini API: Google AI Studio API Key
 
-### Installation & Setup
+ Installation & Setup
 
 1. Clone the Repository
 ```bash
-git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
+git clone https://github.com/Ronak-malpani/Resume-Builder.git
 cd Resume-Builder
 ```
 
@@ -136,6 +136,7 @@ npm start
 
 
 3. **Frontend Setup**
+
 Create a `.env` file in the `client` directory:
 ```env
 VITE_API_URL=http://localhost:5000
@@ -144,7 +145,7 @@ VITE_API_URL=http://localhost:5000
 
 
 Install dependencies and start the development server:
-```bash
+
 cd ../client
 npm install
 npm run dev
