@@ -73,21 +73,6 @@ The core mission of this project is to provide data-driven feedback through the 
 
 ## Project Structure
 
-```text
-/client
-├── public/                # Static assets & Netlify _redirects
-└── src/
-    ├── components/        # Reusable UI (Modals, ATS Reports, Navbar)
-    ├── pages/             # Dashboard, Builder, Auth pages
-    ├── store/             # Redux slices and store config
-    └── assets/            # Icons (Lucide) and Images
-
-/server
-├── configs/               # DB and Gemini AI configurations
-├── controllers/           # Core logic (AI handlers, Resume CRUD)
-├── models/                # Mongoose schemas (Resume, User)
-├── routes/                # API endpoint definitions
-└── server.js              # Entry point: Express app initialization
 
 
 Getting Started
