@@ -1,7 +1,7 @@
 <div align="center">
 
   <br />
-  <img src="./client/public/logo.svg" alt="ResumeAI Logo" width="80" height="80">
+  <img src="./client/public/white_logo.png" alt="ResumeAI Logo" width="80" height="80">
   
   <h1 align="center">AI Resume Builder & ATS Auditor</h1>
   
@@ -168,7 +168,7 @@ npm run dev
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See [LICENSE](https://github.com/Ronak-malpani/Resume-Builder/blob/main/LICENSE) for more information.
 
 ---
 
