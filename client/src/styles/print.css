@@ -1,0 +1,43 @@
+/* =========================
+   SCREEN (DEFAULT)
+   ========================= */
+
+/* Do NOTHING on screen */
+.no-print {
+  display: flex;
+}
+
+/* =========================
+   PRINT MODE ONLY
+   ========================= */
+@media print {
+
+  /* Hide buttons ONLY while printing */
+  .no-print {
+    display: none !important;
+  }
+
+  .print-container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .resume-section {
+    page-break-after: always;
+  }
+
+  .print-shadow {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+    background: white !important;
+  }
+
+  .ats-section-block {
+    page-break-inside: avoid;
+  }
+
+  svg {
+    page-break-inside: avoid;
+  }
+}

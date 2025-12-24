@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import "tailwindcss";
+
+*{
+  font-family: "Outfit", sans-serif;
+}
+
+@layer base {
+  button {
+    @apply cursor-pointer;
+  }
+  input:not([type="checkbox"]){
+    @apply outline-none focus:ring border border-gray-300
+    focus:ring-blue-500 focus:border-blue-500 rounded-lg;
+  }
+  textarea{
+    @apply outline-none focus:ring border border-gray-300
+    focus:ring-blue-500 focus:border-blue-500 rounded-lg resize-none
+  }
+  html {
+    /* Responsive base font size: 14px for mobile, 16px for desktop */
+    font-size: 14px; 
+  }
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px;
+    }
+  }
+}
+
+#resume-preview p {
+  white-space: pre-wrap !important;
+  max-width: 100% !important;
+  height: auto !important;
+  overflow-wrap: break-word; /* Prevents text from leaking out on small screens */
+  margin: 0 auto;
+}
+
+/* Specifically ensures project descriptions start each sentence on a new line */
+#resume-preview .whitespace-pre-wrap,
+#resume-preview .whitespace-pre-line {
+  white-space: pre-wrap !important;
+}
+
+/* Animation for section highlighting */
+@keyframes sectionGlow {
+  0% { outline: 0px solid transparent; background-color: transparent; }
+  50% { outline: 4px solid #f59e0b; background-color: rgba(245, 158, 11, 0.1); transform: scale(1.01); }
+  100% { outline: 0px solid transparent; background-color: transparent; transform: scale(1); }
+}
+
+.resume-container {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: auto; /* Allows horizontal scrolling if the template is too wide for very small screens */
+  padding: 1rem;
+}
+
+.highlight-section {
+  animation: sectionGlow 2.5s ease-in-out;
+  scroll-margin-top: 100px; /* Prevents header overlap during scroll */
+}
+
+/* Scrollbar styling for a cleaner look */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+/* Fix for oklch parsing in Export */
+.ats-export-capture {
+  background-color: #ffffff !important;
+  color: #1e293b !important; /* Forces Hex instead of oklch */
+}
+
+/* Ensure all nested text in the clone is visible to the parser */
+.ats-export-capture * {
+  color: inherit !important;
+  border-color: #e2e8f0 !important; /* Hex Slate-200 */
+}
+
+/* Ensures project descriptions and summaries wrap correctly in the PDF */
+.ats-export-capture p, 
+.ats-export-capture span {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}
+
+/* index.css additions */
+#resume-preview p {
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word;
+}
+
+@keyframes sectionGlow {
+  0% { outline: 0px solid transparent; background-color: transparent; }
+  50% { outline: 4px solid #f59e0b; background-color: rgba(245, 158, 11, 0.1); transform: scale(1.01); }
+  100% { outline: 0px solid transparent; background-color: transparent; transform: scale(1); }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  #resume-preview {
+    visibility: visible !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+  }
+}
