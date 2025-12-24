@@ -1,3 +1,4 @@
+```markdown
 <div align="center">
 
   <br />
@@ -76,17 +77,17 @@ The core mission of this project is to provide data-driven feedback through the 
 ```text
 resume-builder
 ├── client
-│   ├── public/                # Favicon and logo assets
-│   ├── src
-│   │   ├── app/               # Redux store and features
-│   │   ├── assets/            # Global images and templates
-│   │   ├── components/        # Reusable UI components
-│   │   ├── configs/           # API and Axios setup
-│   │   ├── pages/             # Main application views
-│   │   ├── styles/            # Print and layout CSS
-│   │   ├── App.jsx            # Main router
-│   │   └── main.jsx           # Entry point
-│   └── vite.config.js         # Build configuration
+│   ├── public/                # Favicon and logo assets
+│   ├── src
+│   │   ├── app/               # Redux store and features
+│   │   ├── assets/            # Global images and templates
+│   │   ├── components/        # Reusable UI components
+│   │   ├── configs/           # API and Axios setup
+│   │   ├── pages/             # Main application views
+│   │   ├── styles/            # Print and layout CSS
+│   │   ├── App.jsx            # Main router
+│   │   └── main.jsx           # Entry point
+│   └── vite.config.js         # Build configuration
 └── server
     ├── configs/               # AI, DB, and Multer setup
     ├── controllers/           # Business logic (AI, Resume, User)
@@ -94,57 +95,92 @@ resume-builder
     ├── models/                # Mongoose schemas (Resume, User)
     ├── routes/                # Express API routes
     └── server.js              # Backend entry point
+
 ```
 
-Getting Started
+---
 
-Prerequisites
-  Node.js: v18 or higher
-  MongoDB: Atlas Account or local instance
-  Gemini API: Google AI Studio API Key
+## Getting Started
 
-Installation & Setup
-1.)Clone the Repository:
-  git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
-  cd Resume-Builder
+### Prerequisites
 
-2.)Backend Setup: Create a .env file in the server directory:
-  MONGO_URI=your_mongodb_connection_string
-  PORT=5000
-  JWT_SECRET=your_jwt_secret
-  GEMINI_API_KEY=your_gemini_api_key
+* **Node.js**: v18 or higher
+* **MongoDB**: Atlas Account or local instance
+* **Gemini API**: Google AI Studio API Key
 
-  Run the following commands:
-  cd server
-  npm install
-  npm start
+### Installation & Setup
 
-3.)Frontend Setup: Create a .env file in the client directory:
-  VITE_API_URL=http://localhost:5000
+1. **Clone the Repository**
+```bash
+git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
+cd Resume-Builder
 
-  Run the following commands:
-  cd ../client
-  npm install
-  npm run dev
+```
 
-  Roadmap
-[x] AI Resume Parsing (PDF to JSON)
 
-[x] ATS Scoring & Feedback System
+2. **Backend Setup**
+Create a `.env` file in the `server` directory:
+```env
+MONGO_URI=your_mongodb_connection_string
+PORT=5000
+JWT_SECRET=your_jwt_secret
+GEMINI_API_KEY=your_gemini_api_key
 
-[x] AI Professional Summary Enhancer
+```
 
-[x] Multi-resume Dashboard Management
 
-[ ] Custom Template Color Themes
+Install dependencies and start the server:
+```bash
+cd server
+npm install
+npm start
 
-[ ] LinkedIn Profile URL Parsing
+```
 
-License
-Distributed under the MIT License. See LICENSE for more information.
 
-Contact
-Ronak Malpani - malpanironak11@gmail.com
+3. **Frontend Setup**
+Create a `.env` file in the `client` directory:
+```env
+VITE_API_URL=http://localhost:5000
 
-Project Link: https://github.com/Ronak-malpani/Resume-Builder
+```
 
+
+Install dependencies and start the development server:
+```bash
+cd ../client
+npm install
+npm run dev
+
+```
+
+
+
+---
+
+## Roadmap
+
+* [x] AI Resume Parsing (PDF to JSON)
+* [x] ATS Scoring & Feedback System
+* [x] AI Professional Summary Enhancer
+* [x] Multi-resume Dashboard Management
+* [ ] Custom Template Color Themes
+* [ ] LinkedIn Profile URL Parsing
+
+---
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## Contact
+
+**Ronak Malpani** - [malpanironak11@gmail.com](mailto:malpanironak11@gmail.com)
+
+**Project Link**: [https://github.com/Ronak-malpani/Resume-Builder](https://github.com/Ronak-malpani/Resume-Builder)
+
+```
+
+```
