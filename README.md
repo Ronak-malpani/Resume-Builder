@@ -18,7 +18,7 @@
 [![Stars](https://img.shields.io/github/stars/Ronak-malpani/Resume-Builder?style=for-the-badge&color=yellow)](https://github.com/Ronak-malpani/Resume-Builder/stargazers)
 [![Forks](https://img.shields.io/github/forks/Ronak-malpani/Resume-Builder?style=for-the-badge&color=green)](https://github.com/Ronak-malpani/Resume-Builder/network/members)
 [![Issues](https://img.shields.io/github/issues/Ronak-malpani/Resume-Builder?style=for-the-badge&color=orange)](https://github.com/Ronak-malpani/Resume-Builder/issues)
-[![License](https://img.shields.io/github/license/Ronak-malpani/Resume-Builder?style=for-the-badge&color=blue)](https://github.com/Ronak-malpani/Resume-Builder/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/Ronak-malpani/Resume-Builder?style=for-the-badge&color=blue)](https://github.com/Ronak-malpani/Resume-Builder/blob/main/License)
 
 </div>
 
@@ -168,7 +168,7 @@ npm run dev
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](https://github.com/Ronak-malpani/Resume-Builder/blob/main/LICENSE) for more information.
+Distributed under the MIT License. See [LICENSE](https://github.com/Ronak-malpani/Resume-Builder/blob/main/License) for more information.
 
 ---
 
