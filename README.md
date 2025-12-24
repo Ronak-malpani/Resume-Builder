@@ -1,15 +1,12 @@
-
-
-```markdown
 <div align="center">
 
   <br />
-  <img src="./client/src/assets/logo.svg" alt="Resume AI Logo" width="80" height="80">
+  <img src="./client/src/assets/logo.svg" alt="ResumeAI Logo" width="80" height="80">
   
   <h1 align="center">AI Resume Builder & ATS Auditor</h1>
   
   <p align="center">
-    A professional MERN stack application that leverages Google Gemini AI to help users build, parse, and optimize resumes with real-time ATS scoring and AI-driven content enhancement.
+    A professional full-stack MERN application that leverages Google Gemini AI to build, parse, and optimize resumes with real-time ATS scoring and AI-driven content enhancement.
     <br>
     <a href="https://github.com/Ronak-malpani/Resume-Builder"><strong>Explore the Repo »</strong></a>
     <br>
@@ -21,6 +18,7 @@
 [![Stars](https://img.shields.io/github/stars/Ronak-malpani/Resume-Builder?style=for-the-badge&color=yellow)](https://github.com/Ronak-malpani/Resume-Builder/stargazers)
 [![Forks](https://img.shields.io/github/forks/Ronak-malpani/Resume-Builder?style=for-the-badge&color=green)](https://github.com/Ronak-malpani/Resume-Builder/network/members)
 [![Issues](https://img.shields.io/github/issues/Ronak-malpani/Resume-Builder?style=for-the-badge&color=orange)](https://github.com/Ronak-malpani/Resume-Builder/issues)
+[![License](https://img.shields.io/github/license/Ronak-malpani/Resume-Builder?style=for-the-badge&color=blue)](https://github.com/Ronak-malpani/Resume-Builder/blob/main/LICENSE)
 
 </div>
 
@@ -34,163 +32,119 @@
     <li><a href="#tech-stack">Tech Stack</a></li>
     <li><a href="#project-structure">Project Structure</a></li>
     <li><a href="#getting-started">Getting Started</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
 
------
+---
 
 ## About The Project
 
+AI Resume Builder is an intelligent platform designed to bridge the gap between job seekers and Applicant Tracking Systems (ATS). By integrating the **Google Gemini AI** engine, the application allows users to transform raw text or uploaded PDFs into polished, industry-standard resumes. 
 
+The core mission of this project is to provide data-driven feedback through the **ATS Audit** system, which scores resumes based on keyword relevance and formatting, ensuring users have the best chance of landing an interview.
 
-The **AI Resume Builder** is a full-stack platform designed to bridge the gap between job seekers and Applicant Tracking Systems (ATS). Built on the **MERN** stack, it utilizes the **Google Gemini API** to provide intelligent features like automated PDF parsing, professional content rewriting, and a comprehensive "ATS Audit" report.
-
-Unlike traditional builders, this tool focuses on data-driven optimization, ensuring that every bullet point and summary is crafted to pass modern recruitment filters while maintaining a professional aesthetic.
-
------
+---
 
 ## Key Features
 
-* **AI Resume Parsing:** Upload an existing PDF resume; the system uses Gemini AI to extract and structure your personal info, experience, and skills into a clean digital format.
-* **ATS Score Audit:** Provides a real-time "ATS Score" by analyzing your resume against industry standards or specific job descriptions.
-* **AI Content Optimization:** * **Summaries:** Enhances professional summaries to be more impactful.
-    * **Job Descriptions:** Converts raw duties into 3 achievement-focused bullet points using strong action verbs.
-    * **Projects:** Polishes project details for maximum technical clarity.
-* **Real-time Preview:** Interactive builder where changes update instantly on a professional, print-ready template.
-* **Persistent Dashboard:** Manage multiple resumes, track their completion progress, and edit titles or visibility settings.
-* **PDF Export:** High-fidelity PDF generation that ensures your document remains ATS-parseable after download.
+* AI Resume Parsing: Automatically extract details from existing PDF resumes into a structured digital format.
+* ATS Score Audit: Real-time analysis of resumes against job descriptions with keyword gap identification.
+* Professional AI Rewriting: Optimize professional summaries and experience bullet points using Gemini AI.
+* Real-time Builder: Interactive editor with live template preview and dynamic completion tracking.
+* Multi-Resume Management: Dashboard to create, rename, delete, and manage multiple career documents.
+* Clean PDF Export: High-fidelity document generation optimized for both human readers and ATS parsers.
 
------
+---
 
 ## Tech Stack
 
 | Category | Technology | Purpose |
 | :---: | :---: | :--- |
-| **Frontend** | React, Tailwind CSS, Vite | Fast, responsive UI with modern utility-first styling. |
-| **Backend** | Node.js, Express.js | Scalable API engine and AI integration layer. |
-| **Database** | MongoDB, Mongoose | NoSQL storage for structured resume documents. |
-| **AI Engine** | Google Gemini | Powering parsing, auditing, and text enhancement. |
-| **State Mgmt**| Redux Toolkit | Centralized management for auth and user data. |
-| **PDF Logic** | react-pdftotext | Client-side extraction of text from uploaded documents. |
+| Frontend | React, Tailwind CSS, Vite | Building a fast, responsive, and modern user interface. |
+| Backend | Node.js, Express.js | Core API engine and AI integration logic. |
+| Database | MongoDB, Mongoose | NoSQL database for flexible resume data storage. |
+| AI Engine | Google Gemini API | Powers the intelligent parsing and text optimization. |
+| State Management | Redux Toolkit | Centralized state for authentication and UI flow. |
 
------
+---
 
 ## Project Structure
 
-The application follows a clean monorepo structure separating frontend concerns from backend logic.
-
-
-```
-
+```text
 /client
-├── public/               # Static assets & Netlify _redirects
+├── public/                # Static assets & Netlify _redirects
 └── src/
-├── assets/           # Icons and SVG logos
-├── components/       # Reusable UI (Modals, ATS Reports, Navbar)
-├── pages/            # Dashboard, Resume Builder, Auth Pages
-├── store/            # Redux Slices (auth, UI state)
-├── configs/          # API/Axios configurations
-└── App.jsx           # Main Router and Layout logic
+    ├── components/        # Reusable UI (Modals, ATS Reports, Navbar)
+    ├── pages/             # Dashboard, Builder, Auth pages
+    ├── store/             # Redux slices and store config
+    └── assets/            # Icons (Lucide) and Images
 
 /server
-├── configs/              # Database & Gemini AI configurations
-├── controllers/          # Business logic (AI processing, Resume CRUD)
-├── models/               # Mongoose schemas (User, Resume)
-├── routes/               # Express API endpoints
-└── server.js             # Entry point: Server initialization
+├── configs/               # DB and Gemini AI configurations
+├── controllers/           # Core logic (AI handlers, Resume CRUD)
+├── models/                # Mongoose schemas (Resume, User)
+├── routes/                # API endpoint definitions
+└── server.js              # Entry point: Express app initialization
 
-```
 
------
+Getting Started
+Prerequisites
+Node.js (v18 or higher)
 
-## Getting Started
+MongoDB Atlas Account
 
-Follow these steps to set up the AI Resume Builder locally.
+Google AI Studio API Key (Gemini)
 
-### Prerequisites
+Installation & Setup
+Clone the Repository:
 
-* Node.js & npm (v18 or higher)
-* A MongoDB Atlas database instance
-* **Google AI Studio API Key** (for Gemini AI access)
+Bash
 
-### Installation & Setup
+git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
+cd Resume-Builder
+Backend Setup: Create a .env file in the server directory:
 
-1. **Clone the Repository:**
-   ```sh
-   git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
-   cd Resume-Builder
+Code snippet
 
-```
-
-2. **Setup Environment Variables:**
-Create a `.env` file in the **server** directory and a `.env` file in the **client** directory.
-`server/.env`:
-```env
-MONGO_URI=<YOUR_MONGODB_CONNECTION_STRING>
+MONGO_URI=your_mongodb_connection_string
 PORT=5000
-JWT_SECRET=<YOUR_JWT_SECRET_KEY>
-GEMINI_API_KEY=<YOUR_GOOGLE_GEMINI_API_KEY>
+JWT_SECRET=your_jwt_secret
+GEMINI_API_KEY=your_gemini_api_key
+Bash
 
-```
-
-
-`client/.env`:
-```env
-VITE_API_URL=http://localhost:5000
-
-```
-
-
-3. **Start the Backend:**
-```sh
 cd server
 npm install
 npm start
+Frontend Setup: Create a .env file in the client directory:
 
-```
+Code snippet
 
+VITE_API_URL=http://localhost:5000
+Bash
 
-4. **Start the Frontend:**
-```sh
-cd client
+cd ../client
 npm install
 npm run dev
+Roadmap
+[x] AI Resume Parsing (PDF to JSON)
 
-```
+[x] ATS Scoring & Feedback System
 
+[x] AI Professional Summary Enhancer
 
+[x] Multi-resume Dashboard Management
 
----
+[ ] Custom Template Color Themes
 
-### Roadmap
+[ ] LinkedIn Profile URL Parsing
 
-* [x] AI Resume Parsing from PDF
-* [x] ATS Audit Scoring System
-* [x] Professional Content Enhancement (Gemini)
-* [x] Multi-Resume Dashboard
-* [ ] Custom Theme/Color Selection
-* [ ] Multi-template Library
+License
+Distributed under the MIT License. See LICENSE for more information.
 
----
+Contact
+Ronak Malpani - malpanironak11@gmail.com
 
-### Contact
-
-Ronak Malpani - [malpanironak11@gmail.com](mailto:malpanironak11@gmail.com) - [LinkedIn Profile](https://linkedin.com/in/ronakmalpani15)
-
-Project Link: [https://github.com/Ronak-malpani/Resume-Builder](https://www.google.com/url?sa=E&source=gmail&q=https://github.com/Ronak-malpani/Resume-Builder)
-
-```
-
-### Next Step for you:
-1. Create a file named **`README.md`** in your main `resume-builder` folder.
-2. Paste the code above into it.
-3. Make sure you have a logo file at `client/src/assets/logo.svg` (or update the path in the README if it's different).
-4. **Git Push** this final version to GitHub:
-   ```bash
-   git add README.md
-   git commit -m "Docs: Add professional README"
-   git push origin main
-
-```
+Project Link: https://github.com/Ronak-malpani/Resume-Builder
