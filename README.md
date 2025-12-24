@@ -101,21 +101,21 @@ resume-builder
 
 ### Prerequisites
 
-* **Node.js**: v18 or higher
-* **MongoDB**: Atlas Account or local instance
-* **Gemini API**: Google AI Studio API Key
+* Node.js: v18 or higher
+* MongoDB: Atlas Account or local instance
+* Gemini API: Google AI Studio API Key
 
 ### Installation & Setup
 
-1. **Clone the Repository**
+1. Clone the Repository
 ```bash
 git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
 cd Resume-Builder
-
 ```
 
 
 2. **Backend Setup**
+
 Create a `.env` file in the `server` directory:
 ```env
 MONGO_URI=your_mongodb_connection_string
@@ -161,8 +161,8 @@ npm run dev
 * [x] ATS Scoring & Feedback System
 * [x] AI Professional Summary Enhancer
 * [x] Multi-resume Dashboard Management
-* [ ] Custom Template Color Themes
-* [ ] LinkedIn Profile URL Parsing
+* [x] Custom Template Color Themes
+
 
 ---
 
