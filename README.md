@@ -1,4 +1,3 @@
-```markdown
 <div align="center">
 
   <br />
@@ -95,8 +94,6 @@ resume-builder
     ├── models/                # Mongoose schemas (Resume, User)
     ├── routes/                # Express API routes
     └── server.js              # Backend entry point
-
-```
 
 ---
 
