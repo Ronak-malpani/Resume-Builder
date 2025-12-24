@@ -1,7 +1,7 @@
 <div align="center">
 
   <br />
-  <img src="./client/src/assets/logo.svg" alt="ResumeAI Logo" width="80" height="80">
+  <img src="./client/public/logo.svg" alt="ResumeAI Logo" width="80" height="80">
   
   <h1 align="center">AI Resume Builder & ATS Auditor</h1>
   
@@ -44,6 +44,8 @@
 
 AI Resume Builder is an intelligent platform designed to bridge the gap between job seekers and Applicant Tracking Systems (ATS). By integrating the **Google Gemini AI** engine, the application allows users to transform raw text or uploaded PDFs into polished, industry-standard resumes. 
 
+
+
 The core mission of this project is to provide data-driven feedback through the **ATS Audit** system, which scores resumes based on keyword relevance and formatting, ensuring users have the best chance of landing an interview.
 
 ---
@@ -73,8 +75,31 @@ The core mission of this project is to provide data-driven feedback through the 
 
 ## Project Structure
 
+```text
+resume-builder
+├── client
+│   ├── public/                # Favicon and logo assets
+│   ├── src
+│   │   ├── app/               # Redux store and features
+│   │   ├── assets/            # Global images and templates
+│   │   ├── components/        # Reusable UI components
+│   │   ├── configs/           # API and Axios setup
+│   │   ├── pages/             # Main application views
+│   │   ├── styles/            # Print and layout CSS
+│   │   ├── App.jsx            # Main router
+│   │   └── main.jsx           # Entry point
+│   └── vite.config.js         # Build configuration
+└── server
+    ├── configs/               # AI, DB, and Multer setup
+    ├── controllers/           # Business logic (AI, Resume, User)
+    ├── middlewares/           # Auth and Clerk protection
+    ├── models/                # Mongoose schemas (Resume, User)
+    ├── routes/                # Express API routes
+    └── server.js              # Backend entry point
 
 
+
+```
 Getting Started
 Prerequisites
 Node.js (v18 or higher)
@@ -86,33 +111,28 @@ Google AI Studio API Key (Gemini)
 Installation & Setup
 Clone the Repository:
 
-Bash
 
-git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
+Bash: git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
 cd Resume-Builder
 Backend Setup: Create a .env file in the server directory:
-
-Code snippet
 
 MONGO_URI=your_mongodb_connection_string
 PORT=5000
 JWT_SECRET=your_jwt_secret
 GEMINI_API_KEY=your_gemini_api_key
-Bash
 
-cd server
+Bash:cd server
 npm install
 npm start
 Frontend Setup: Create a .env file in the client directory:
 
-Code snippet
 
 VITE_API_URL=http://localhost:5000
-Bash
 
-cd ../client
+Bash: cd ../client
 npm install
 npm run dev
+
 Roadmap
 [x] AI Resume Parsing (PDF to JSON)
 
