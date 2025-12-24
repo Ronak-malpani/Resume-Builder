@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../configs/api';
 import { 
@@ -26,21 +26,22 @@ const ResumeBuilder = () => {
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
 
-  const sections = [
+  // Memoize sections to avoid re-creating on each render
+  const sections = useMemo(() => [
     { id: "personal", name: "Personal Information", icon: User },
     { id: "summary", name: "Professional Summary", icon: FileText },
     { id: "experience", name: "Experience", icon: Briefcase },
     { id: "education", name: "Education", icon: GraduationCap },
     { id: "projects", name: "Projects", icon: FolderIcon },
     { id: "skills", name: "Skills", icon: Sparkles },
-  ];
+  ], []);
 
   const activeSection = sections[activeSectionIndex];
 
   // Fetch existing resume
   const loadExistingResume = async () => {
     try {
-      const { data } = await api.get('/api/resumes/get/' + resumeId, {
+      const { data } = await api.get(`/api/resumes/get/${resumeId}`, {
         headers: { Authorization: token }
       });
       if (data.resume) {
@@ -49,16 +50,13 @@ const ResumeBuilder = () => {
       }
     } catch (error) {
       console.error("Error fetching resume:", error);
+      toast.error("Failed to load resume");
     }
   };
 
   useEffect(() => {
-    loadExistingResume();
-  }, []);
-
-  useEffect(() => {
-    console.log("🔴 resumeData changed:", resumeData);
-  }, [resumeData]);
+    if (resumeId && token) loadExistingResume();
+  }, [resumeId, token]);
 
   // Save resume
   const saveResume = async () => {
@@ -67,16 +65,19 @@ const ResumeBuilder = () => {
       return;
     }
     try {
-      let updatedResumeData = structuredClone(resumeData);
-      if (typeof updatedResumeData.personal_info.image === 'object') {
-        delete updatedResumeData.personal_info.image;
-      }
+      const updatedResumeData = structuredClone(resumeData);
+
+      // Prepare image if it's a File object
+      const imageFile = updatedResumeData.personal_info.image instanceof File
+        ? updatedResumeData.personal_info.image
+        : null;
+      if (imageFile) delete updatedResumeData.personal_info.image;
 
       const formData = new FormData();
       formData.append("resumeId", resumeId);
       formData.append("resumeData", JSON.stringify(updatedResumeData));
       removeBackground && formData.append("removeBackground", "yes");
-      typeof resumeData.personal_info.image === 'object' && formData.append("image", resumeData.personal_info.image);
+      imageFile && formData.append("image", imageFile);
 
       const { data } = await api.put('/api/resumes/update', formData, {
         headers: { Authorization: token }
@@ -94,28 +95,32 @@ const ResumeBuilder = () => {
   const changeResumeVisibility = async () => {
     if (!resumeData) return;
     try {
+      const newStatus = !resumeData.public;
       const formData = new FormData();
       formData.append("resumeId", resumeId);
-      formData.append("resumeData", JSON.stringify({ public: !resumeData.public }));
+      formData.append("resumeData", JSON.stringify({ public: newStatus }));
 
       await api.put('/api/resumes/update', formData, { headers: { Authorization: token } });
 
-      setResumeData(prev => ({ ...prev, public: !prev.public }));
-      toast.success(resumeData.public ? "Set to Private" : "Set to Public");
+      setResumeData(prev => ({ ...prev, public: newStatus }));
+      toast.success(newStatus ? "Set to Public" : "Set to Private");
+
     } catch (error) {
       console.error("Error changing visibility:", error);
+      toast.error("Failed to change visibility");
     }
   };
 
   const handleShare = () => {
     if (!resumeData) return;
     const frontendUrl = window.location.href.split('/app/')[0];
-    const resumeUrl = frontendUrl + '/view/' + resumeId;
+    const resumeUrl = `${frontendUrl}/view/${resumeId}`;
 
     if (navigator.share) {
       navigator.share({ url: resumeUrl, text: "My Resume" });
     } else {
-      alert("Share not supported in this browser");
+      navigator.clipboard.writeText(resumeUrl);
+      toast.success("Resume link copied to clipboard");
     }
   };
 
@@ -126,7 +131,7 @@ const ResumeBuilder = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <Link to={'/app'} className="inline-flex gap-2 items-center text-slate-500 hover:text-slate-700 transition-all">
-        <ArrowLeftIcon className="size-4" /> Back to Dashboard
+        <ArrowLeftIcon className="w-4 h-4" /> Back to Dashboard
       </Link>
 
       <div className="grid lg:grid-cols-12 gap-8 mt-6">
@@ -158,7 +163,7 @@ const ResumeBuilder = () => {
                   onClick={() => setActiveSectionIndex(prev => Math.max(prev - 1, 0))}
                   className="flex items-center gap-1 p-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all"
                 >
-                  <ChevronLeft className="size-4" /> Previous
+                  <ChevronLeft className="w-4 h-4" /> Previous
                 </button>
               )}
               <button
@@ -166,7 +171,7 @@ const ResumeBuilder = () => {
                 className={`flex items-center gap-1 p-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all ${activeSectionIndex === sections.length - 1 ? 'opacity-50' : ''}`}
                 disabled={activeSectionIndex === sections.length - 1}
               >
-                Next <ChevronRight className="size-4" />
+                Next <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -232,7 +237,7 @@ const ResumeBuilder = () => {
           <div className="absolute bottom-3 left-0 right-0 flex items-center justify-end gap-2">
             {resumeData.public && (
               <button onClick={handleShare} className="flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600 rounded-lg ring-blue-300 hover:ring transition-colors">
-                <Share2Icon className="size-4" /> Share
+                <Share2Icon className="w-4 h-4" /> Share
               </button>
             )}
 
@@ -240,7 +245,7 @@ const ResumeBuilder = () => {
               onClick={changeResumeVisibility}
               className="flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600 ring-blue-300 rounded-lg hover:ring transition-colors"
             >
-              {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+              {resumeData.public ? <EyeIcon className="w-4 h-4" /> : <EyeOffIcon className="w-4 h-4" />}
               {resumeData.public ? 'Public' : 'Private'}
             </button>
 
@@ -248,7 +253,7 @@ const ResumeBuilder = () => {
               onClick={downloadResume}
               className="flex items-center gap-2 px-6 py-2 text-xs bg-gradient from-green-100 to-green-200 text-green-600 rounded-lg ring-green-300 hover:ring transition-colors"
             >
-              <DownloadIcon className="size-4" /> Download
+              <DownloadIcon className="w-4 h-4" /> Download
             </button>
           </div>
 

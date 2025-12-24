@@ -4,19 +4,19 @@ import {
   enhanceProfessionalSummary,
   enhanceJobDescription,
   enhanceProjectDescription,
-  uploadResume,
+  uploadResume
 } from "../controllers/aiController.js";
 import { analyzeResumeATS } from "../controllers/atsController.js";
 
 const aiRouter = express.Router();
 
-// JWT protected AI enhance routes
+// AI enhancements - JWT protected
 aiRouter.post("/enhance-pro-sum", protect, enhanceProfessionalSummary);
 aiRouter.post("/enhance-job-desc", protect, enhanceJobDescription);
-aiRouter.post("/upload-resume", protect, uploadResume);
 aiRouter.post("/enhance-project-desc", protect, enhanceProjectDescription);
+aiRouter.post("/upload-resume", protect, uploadResume);
 
-// ATS scan — NO AUTH (important)
+// ATS scan - public (no auth)
 aiRouter.post("/ats-analysis", analyzeResumeATS);
 
 export default aiRouter;
