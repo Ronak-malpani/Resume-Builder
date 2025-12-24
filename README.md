@@ -1,3 +1,4 @@
+```markdown
 <div align="center">
 
   <br />
@@ -44,20 +45,18 @@
 
 AI Resume Builder is an intelligent platform designed to bridge the gap between job seekers and Applicant Tracking Systems (ATS). By integrating the **Google Gemini AI** engine, the application allows users to transform raw text or uploaded PDFs into polished, industry-standard resumes. 
 
-
-
 The core mission of this project is to provide data-driven feedback through the **ATS Audit** system, which scores resumes based on keyword relevance and formatting, ensuring users have the best chance of landing an interview.
 
 ---
 
 ## Key Features
 
-* AI Resume Parsing: Automatically extract details from existing PDF resumes into a structured digital format.
-* ATS Score Audit: Real-time analysis of resumes against job descriptions with keyword gap identification.
-* Professional AI Rewriting: Optimize professional summaries and experience bullet points using Gemini AI.
-* Real-time Builder: Interactive editor with live template preview and dynamic completion tracking.
-* Multi-Resume Management: Dashboard to create, rename, delete, and manage multiple career documents.
-* Clean PDF Export: High-fidelity document generation optimized for both human readers and ATS parsers.
+* **AI Resume Parsing**: Automatically extract details from existing PDF resumes into a structured digital format.
+* **ATS Score Audit**: Real-time analysis of resumes against job descriptions with keyword gap identification.
+* **Professional AI Rewriting**: Optimize professional summaries and experience bullet points using Gemini AI.
+* **Real-time Builder**: Interactive editor with live template preview and dynamic completion tracking.
+* **Multi-Resume Management**: Dashboard to create, rename, delete, and manage multiple career documents.
+* **Clean PDF Export**: High-fidelity document generation optimized for both human readers and ATS parsers.
 
 ---
 
@@ -97,59 +96,91 @@ resume-builder
     ├── routes/                # Express API routes
     └── server.js              # Backend entry point
 
+```
 
+---
+
+## Getting Started
+
+### Prerequisites
+
+* **Node.js**: v18 or higher
+* **MongoDB**: Atlas Account or local instance
+* **Gemini API**: Google AI Studio API Key
+
+### Installation & Setup
+
+1. **Clone the Repository:**
+```bash
+git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
+cd Resume-Builder
 
 ```
-Getting Started
-Prerequisites
-Node.js (v18 or higher)
-
-MongoDB Atlas Account
-
-Google AI Studio API Key (Gemini)
-
-Installation & Setup
-Clone the Repository:
 
 
-Bash: git clone [https://github.com/Ronak-malpani/Resume-Builder.git](https://github.com/Ronak-malpani/Resume-Builder.git)
-cd Resume-Builder
-Backend Setup: Create a .env file in the server directory:
-
+2. **Backend Setup:**
+Create a `.env` file in the `server` directory:
+```env
 MONGO_URI=your_mongodb_connection_string
 PORT=5000
 JWT_SECRET=your_jwt_secret
 GEMINI_API_KEY=your_gemini_api_key
 
-Bash:cd server
+```
+
+
+Run the following commands:
+```bash
+cd server
 npm install
 npm start
-Frontend Setup: Create a .env file in the client directory:
+
+```
 
 
+3. **Frontend Setup:**
+Create a `.env` file in the `client` directory:
+```env
 VITE_API_URL=http://localhost:5000
 
-Bash: cd ../client
+```
+
+
+Run the following commands:
+```bash
+cd ../client
 npm install
 npm run dev
 
-Roadmap
-[x] AI Resume Parsing (PDF to JSON)
+```
 
-[x] ATS Scoring & Feedback System
 
-[x] AI Professional Summary Enhancer
 
-[x] Multi-resume Dashboard Management
+---
 
-[ ] Custom Template Color Themes
+## Roadmap
 
-[ ] LinkedIn Profile URL Parsing
+* [x] AI Resume Parsing (PDF to JSON)
+* [x] ATS Scoring & Feedback System
+* [x] AI Professional Summary Enhancer
+* [x] Multi-resume Dashboard Management
+* [ ] Custom Template Color Themes
+* [ ] LinkedIn Profile URL Parsing
 
-License
-Distributed under the MIT License. See LICENSE for more information.
+---
 
-Contact
-Ronak Malpani - malpanironak11@gmail.com
+## License
 
-Project Link: https://github.com/Ronak-malpani/Resume-Builder
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## Contact
+
+**Ronak Malpani** - [malpanironak11@gmail.com](mailto:malpanironak11@gmail.com)
+
+Project Link: [https://github.com/Ronak-malpani/Resume-Builder](https://github.com/Ronak-malpani/Resume-Builder)
+
+```
+
+```
