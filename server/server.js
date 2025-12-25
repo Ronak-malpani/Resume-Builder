@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 await connectDB();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "https://resume-builder-drab-eta.vercel.app", credentials: true }));
 
 app.use(clerkMiddleware());
 
