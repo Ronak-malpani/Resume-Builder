@@ -7,24 +7,26 @@ export const enhanceProfessionalSummary = async (req, res) => {
     if (!userContent) return res.status(400).json({ message: "Missing userContent" });
 
     const prompt = `
-You are an expert resume writer.
-Enhance the professional summary below.
-Rules:
-- 1 to 2 sentences
-- ATS-friendly
-- Highlight skills, experience & career goals
-- Return ONLY plain text
-
-Summary:
-${userContent}
-`;
+      You are an expert resume writer.
+      Enhance the professional summary below.
+      Rules:
+      - 1 to 2 sentences
+      - ATS-friendly
+      - Highlight skills, experience & career goals
+      - Return ONLY plain text
+      Summary: ${userContent}
+    `;
 
     const result = await geminiModel.generateContent(prompt);
     const enhancedContent = result.response.text().trim();
 
     res.status(200).json({ enhancedContent });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("AI Error:", error.message);
+    if (error.status === 429 || error.message?.includes("429")) {
+      return res.status(429).json({ message: "AI limit reached. Please wait." });
+    }
+    res.status(500).json({ message: "AI Service unavailable" });
   }
 };
 
