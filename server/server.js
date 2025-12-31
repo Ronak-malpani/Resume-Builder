@@ -6,6 +6,7 @@ import connectDB from "./configs/db.js";
 import userRouter from "./routes/userRoutes.js";
 import resumeRouter from "./routes/resumeRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
+import contactRouter from "./routes/contactRoutes.js";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRouter);
 app.use("/api/resumes", resumeRouter);
 app.use("/api/ai", aiRouter);
+app.use("/api/contact", contactRouter);
 
 // Standard error handling middleware
 app.use((err, req, res, next) => {

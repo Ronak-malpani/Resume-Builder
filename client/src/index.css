@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 @import "tailwindcss";
 
-*{
+* {
   font-family: "Outfit", sans-serif;
 }
 
@@ -9,16 +9,14 @@
   button {
     @apply cursor-pointer;
   }
-  input:not([type="checkbox"]){
-    @apply outline-none focus:ring border border-gray-300
-    focus:ring-blue-500 focus:border-blue-500 rounded-lg;
+  input:not([type="checkbox"]) {
+    @apply outline-none focus:ring border border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg;
   }
-  textarea{
-    @apply outline-none focus:ring border border-gray-300
-    focus:ring-blue-500 focus:border-blue-500 rounded-lg resize-none
+  textarea {
+    @apply outline-none focus:ring border border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg resize-none;
   }
   html {
-    font-size: 14px; 
+    font-size: 14px;
   }
   @media (min-width: 768px) {
     html {
@@ -33,6 +31,61 @@
   height: auto !important;
   overflow-wrap: break-word;
   margin: 0 auto;
+}
+
+/* Ensure the resume looks right on screen but prints perfectly */
+#resume-preview {
+  background: white;
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden; /* Important for single-page export */
+}
+
+/* Hide any builder-specific elements that might appear in a clone */
+.no-print {
+  display: none !important;
+}
+
+/* Ensure images inside the resume don't break the layout */
+#resume-preview img {
+  max-width: 100%;
+}
+
+/* Ensure content stays crisp and doesn't spill on screen */
+#resume-preview * {
+  box-sizing: border-box;
+}
+
+@media print {
+  @page { 
+    size: A4; 
+    margin: 0; 
+  }
+  
+  /* Hide the editor panel and all non-resume elements */
+  .no-print, 
+  .lg\:col-span-5, 
+  nav, 
+  button { 
+    display: none !important; 
+  }
+
+  /* Force the preview panel to take 100% width during print */
+  .lg\:col-span-7 { 
+    width: 100% !important; 
+    margin: 0 !important; 
+    padding: 0 !important;
+  }
+
+  #resume-preview {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
 }
 
 #resume-preview .whitespace-pre-wrap,
@@ -79,12 +132,6 @@
   border-color: #e2e8f0 !important;
 }
 
-.ats-export-capture p, 
-.ats-export-capture span {
-  white-space: pre-wrap !important;
-  word-break: break-word !important;
-}
-
 .resume-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -96,61 +143,5 @@
   .resume-grid {
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
-  }
-}
-
-@media print {
-  .no-print, .print\:hidden {
-    display: none !important;
-  }
-  
-  #resume-preview {
-    visibility: visible !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100% !important;
-    font-size: 10.5pt !important;
-    line-height: 1.15 !important;
-  }
-
-  body, .bg-slate-100 {
-    background-color: white !important;
-    background: white !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .print\:max-w-full {
-    max-width: 100% !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .print\:shadow-none {
-    box-shadow: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-  }
-
-  @page {
-    size: auto;
-    margin: 15mm 10mm;
-  }
-
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .resume-grid {
-    grid-template-columns: 1fr 1fr !important; 
-    gap: 1rem !important;
-  }
-
-  section, .experience-item, .project-item {
-    page-break-inside: avoid;
-    break-inside: avoid;
   }
 }
