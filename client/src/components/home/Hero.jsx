@@ -34,7 +34,7 @@ const Hero = () => {
                 }
             `}</style>
 
-            <div className="min-h-screen pb-20 bg-white">
+            <div className="pb-8 bg-white">
                 {/* Navbar */}
                 <nav className="z-50 flex items-center justify-between w-full py-5 px-6 md:px-16 lg:px-24 xl:px-40 text-sm">
                     <Link to="/" className="flex items-center gap-2">

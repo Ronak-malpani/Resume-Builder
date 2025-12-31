@@ -5,6 +5,7 @@ import { BookUserIcon } from 'lucide-react'
 const Testimonial = () => {
 
     const cardsData = [
+        // ... your existing cardsData
         {
             image: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=200',
             name: 'Briar Martin',
@@ -46,8 +47,9 @@ const Testimonial = () => {
     );
 
   return (
-    <div id="testimonials" className="py-24">  
-          {/* ADD THE TITLE COMPONENT HERE */}
+    // CHANGE: Adjusted to py-10 (40px)
+    // This is much smaller than py-24, but keeps some space so it doesn't look crowded.
+    <div id="testimonials" className="py-10"> 
           <Title
               icon={<BookUserIcon className="size-5 fill-green-600"/>} 
               title="What Our Users Say"
@@ -72,21 +74,21 @@ const Testimonial = () => {
                 </div>
                 <div className="absolute right-0 top-0 h-full w-20 md:w-40 z-10 pointer-events-none bg-gradient-to-l from-white to-transparent"></div>
             </div>
+            
+            <style>{`
+                @keyframes marqueeScroll {
+                    0% { transform: translateX(0%); }
+                    100% { transform: translateX(-50%); }
+                }
 
-        <style>{`
-            @keyframes marqueeScroll {
-                0% { transform: translateX(0%); }
-                100% { transform: translateX(-50%); }
-            }
+                .marquee-inner {
+                    animation: marqueeScroll 25s linear infinite;
+                }
 
-            .marquee-inner {
-                animation: marqueeScroll 25s linear infinite;
-            }
-
-            .marquee-reverse {
-                animation-direction: reverse;
-            }
-        `}</style>
+                .marquee-reverse {
+                    animation-direction: reverse;
+                }
+            `}</style>
     </div>
   )
 }
