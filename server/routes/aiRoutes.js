@@ -17,6 +17,6 @@ aiRouter.post("/enhance-project-desc", protect, enhanceProjectDescription);
 aiRouter.post("/upload-resume", protect, uploadResume);
 
 // ATS scan - public (no auth)
-aiRouter.post("/ats-analysis", analyzeResumeATS);
+aiRouter.post("/ats-scan",protect, analyzeResumeATS);
 
 export default aiRouter;

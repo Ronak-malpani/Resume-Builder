@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import api from '../configs/api';
 import pdfToText from 'react-pdftotext';
 import ATSScoreReport from '../components/ATSScoreReport'; 
-import { motion, AnimatePresence } from 'framer-motion'; //
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Dashboard = () => {
   const { user, token } = useSelector(state => state.auth);
@@ -89,22 +89,55 @@ const Dashboard = () => {
     setIsProcessing(false);
   };
 
+  // --- UPDATED SCAN HANDLER ---
+ // --- UPDATED SCAN HANDLER ---
   const handleScanRequest = async (overrideResume = null) => {
     const targetResume = overrideResume || selectedResumeForATS;
     if (!targetResume) return;
+    
     setIsScanning(true);
     try {
+      // 1. Construct a COMPLETE text representation for analysis
+      // We explicitly label sections so the AI knows they exist
       const cleanResumeText = `
-        Name: ${targetResume.personal_info?.full_name || "Unknown"}
-        Summary: ${targetResume.professional_summary || ""}
-        Skills: ${(targetResume.skills || []).slice(0, 15).join(", ")}
-        Experience: ${(targetResume.experience || []).slice(0, 3).map(e => `${e.position}: ${e.description}`).join("\n")}
-      `;
-      const { data } = await api.post('/api/ai/ats-analysis', { resumeText: cleanResumeText }, { headers: { Authorization: token } });
-      setScanReport(data);
-    } catch (err) { toast.error("Audit failed. AI may be busy."); } finally { setIsScanning(false); }
-  };
+        [CONTACT INFO]
+        Name: ${targetResume.personal_info?.full_name || ""}
+        Email: ${targetResume.personal_info?.email || ""}
+        Phone: ${targetResume.personal_info?.phone || ""}
+        LinkedIn: ${targetResume.personal_info?.linkedin || ""}
+        GitHub: ${targetResume.personal_info?.github || ""}
+        Portfolio: ${targetResume.personal_info?.portfolio || ""}
 
+        [SUMMARY]
+        ${targetResume.professional_summary || ""}
+
+        [SKILLS]
+        ${(targetResume.skills || []).join(", ")}
+
+        [EXPERIENCE]
+        ${(targetResume.experience || []).map(e => `${e.position} at ${e.company} (${e.start_date} - ${e.end_date}): ${e.description}`).join("\n")}
+
+        [PROJECTS]
+        ${(targetResume.projects || []).map(p => `${p.name}: ${p.description} (Tech: ${p.technologies})`).join("\n")}
+
+        [EDUCATION]
+        ${(targetResume.education || []).map(e => `${e.degree} in ${e.field} from ${e.school} (GPA: ${e.gpa})`).join("\n")}
+      `;
+
+      // 2. Call the API
+      const { data } = await api.post('/api/ai/ats-scan', { 
+        resumeText: cleanResumeText,
+        experienceData: targetResume.experience 
+      }, { headers: { Authorization: token } });
+      
+      setScanReport(data);
+    } catch (err) { 
+      console.error(err);
+      toast.error("Audit failed. Please try again."); 
+    } finally { 
+      setIsScanning(false); 
+    }
+  };
   const editTitle = async (event) => {
     event.preventDefault();
     try {
@@ -132,6 +165,7 @@ const Dashboard = () => {
       setAllResumes(prev => prev.map(r => r._id === savedResume._id ? savedResume : r));
       setSelectedResumeForATS(savedResume);
       toast.success("Optimizations persisted!");
+      // Optional: re-scan immediately to show improved score
       setTimeout(() => { handleScanRequest(savedResume); }, 400);
     } catch (error) { toast.error("Database sync failed."); }
   };
@@ -156,21 +190,6 @@ const Dashboard = () => {
   };
 
   useEffect(() => { loadAllResumes(); }, []);
-
-  if (selectedResumeForATS) {
-    return (
-      <ATSScoreReport 
-        selectedResume={selectedResumeForATS}
-        onBack={() => { setSelectedResumeForATS(null); setScanReport(null); }}
-        isScanning={isScanning}
-        scanReport={scanReport}
-        onScan={handleScanRequest}
-        onUpdateVisibility={updateVisibility}
-        onUpdateTemplate={updateTemplate}
-        onSaveSuggestions={saveAIChanges}
-      />
-    );
-  }
 
   // --- ANIMATION VARIANTS ---
   const containerVariants = {
@@ -319,6 +338,20 @@ const Dashboard = () => {
           </ModalBackdrop>
         )}
       </AnimatePresence>
+
+      {/* --- CONDITIONAL RENDER: ATS REPORT OVERLAY --- */}
+      {selectedResumeForATS && (
+        <ATSScoreReport 
+          selectedResume={selectedResumeForATS}
+          onBack={() => { setSelectedResumeForATS(null); setScanReport(null); }}
+          isScanning={isScanning}
+          scanReport={scanReport}
+          onScan={() => handleScanRequest(selectedResumeForATS)}
+          onUpdateVisibility={updateVisibility}
+          onUpdateTemplate={updateTemplate}
+          onSaveSuggestions={saveAIChanges}
+        />
+      )}
     </div>
   );
 };

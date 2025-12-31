@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../configs/api';
-import { 
-  ArrowLeftIcon, Briefcase, FileText, FolderIcon, GraduationCap, Sparkles, User,
-  ChevronLeft, ChevronRight, Share2Icon, EyeIcon, EyeOffIcon, DownloadIcon, Loader2
-} from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
-import html2canvasPro from 'html2canvas-pro';
-import jsPDF from 'jspdf';
+import api from '../configs/api';
+import html2pdf from 'html2pdf.js';
 
-// Form Components
+// Icons
+import { 
+  ArrowLeftIcon, ChevronLeft, ChevronRight, 
+  EyeIcon, EyeOffIcon, DownloadIcon, Loader2, Share2Icon 
+} from 'lucide-react';
+
+// Components
 import PersonalInfoForm from '../components/PersonalInfoForm';
 import ProfessionalSummaryForm from '../components/ProfessionalSummaryForm';
 import ExperienceForm from '../components/ExperienceForm';
 import EducationForm from '../components/EducationForm';
 import ProjectForm from '../components/ProjectForm';
 import SkillsForm from '../components/SkillsForm';
-
-// UI Components
 import TemplateSelector from '../components/TemplateSelector';
 import Colorpicker from '../components/Colorpicker';
 import ResumePreview from '../components/ResumePreview';
@@ -28,237 +27,238 @@ const ResumeBuilder = () => {
   const { token } = useSelector(state => state.auth);
 
   const [resumeData, setResumeData] = useState(null);
+  const [debouncedResumeData, setDebouncedResumeData] = useState(null);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
-  const [removeBackground, setRemoveBackground] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Define Sections
   const sections = useMemo(() => [
-    { id: "personal", name: "Personal Information", icon: User },
-    { id: "summary", name: "Professional Summary", icon: FileText },
-    { id: "experience", name: "Experience", icon: Briefcase },
-    { id: "education", name: "Education", icon: GraduationCap },
-    { id: "projects", name: "Projects", icon: FolderIcon },
-    { id: "skills", name: "Skills", icon: Sparkles },
+    { id: "personal", name: "Personal Information" },
+    { id: "summary", name: "Professional Summary" },
+    { id: "experience", name: "Experience" },
+    { id: "education", name: "Education" },
+    { id: "projects", name: "Projects" },
+    { id: "skills", name: "Skills" },
   ], []);
 
   const activeSection = sections[activeSectionIndex];
 
-  const loadExistingResume = async () => {
-    try {
-      const { data } = await api.get(`/api/resumes/get/${resumeId}`, {
-        headers: { Authorization: token }
-      });
-      if (data.resume) {
-        setResumeData(data.resume);
-        document.title = data.resume.title || "Resume Builder";
-      }
-    } catch (error) {
-      toast.error("Failed to load resume");
-    }
-  };
-
+  // 1. Load Resume
   useEffect(() => {
-    if (resumeId && token) loadExistingResume();
+    const loadResume = async () => {
+      try {
+        const { data } = await api.get(`/api/resumes/get/${resumeId}`, { 
+          headers: { Authorization: token } 
+        });
+        if (data.resume) {
+          setResumeData(data.resume);
+          setDebouncedResumeData(data.resume);
+          document.title = data.resume.title || "Resume Builder";
+        }
+      } catch (error) {
+        toast.error("Failed to load resume");
+      }
+    };
+    if (resumeId && token) loadResume();
   }, [resumeId, token]);
 
+  // 2. Debounce Effect (Fixes UI Freezing)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedResumeData(resumeData);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [resumeData]);
+
+  // 3. Safe Update Handler
+  const handleDataChange = (sectionKey, newData) => {
+    setResumeData((prev) => ({
+      ...prev,
+      [sectionKey]: newData
+    }));
+  };
+
+  // 4. Save Function
   const saveResume = async () => {
     if (!resumeData) return;
     setIsSaving(true);
     try {
-      const imageFile = resumeData.personal_info?.image instanceof File 
-        ? resumeData.personal_info.image 
-        : null;
-
-      const dataToSerialize = structuredClone(resumeData);
-      if (imageFile) {
-        dataToSerialize.personal_info.image = resumeData.personal_info.image.name;
-      }
+      const updatedData = structuredClone(resumeData);
+      const imageFile = updatedData.personal_info?.image instanceof File ? updatedData.personal_info.image : null;
+      if (imageFile) delete updatedData.personal_info.image;
 
       const formData = new FormData();
       formData.append("resumeId", resumeId);
-      formData.append("resumeData", JSON.stringify(dataToSerialize));
-      if (removeBackground) formData.append("removeBackground", "yes");
+      formData.append("resumeData", JSON.stringify(updatedData));
       if (imageFile) formData.append("image", imageFile);
 
-      const { data } = await api.put('/api/resumes/update', formData, {
-        headers: { Authorization: token }
+      const { data } = await api.put('/api/resumes/update', formData, { 
+        headers: { Authorization: token } 
       });
-
       setResumeData(data.resume);
+      setDebouncedResumeData(data.resume);
       toast.success("Changes saved!");
     } catch (error) {
-      toast.error("Failed to save changes");
+      toast.error("Failed to save.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const changeResumeVisibility = async () => {
-    if (!resumeData) return;
-    try {
-      const newStatus = !resumeData.public;
-      const formData = new FormData();
-      formData.append("resumeId", resumeId);
-      formData.append("resumeData", JSON.stringify({ public: newStatus }));
-
-      await api.put('/api/resumes/update', formData, { headers: { Authorization: token } });
-      setResumeData(prev => ({ ...prev, public: newStatus }));
-      toast.success(newStatus ? "Resume is now Public" : "Resume is now Private");
-    } catch (error) {
-      toast.error("Failed to update visibility");
-    }
-  };
-
-  const handleShare = () => {
-    const resumeUrl = `${window.location.origin}/view/${resumeId}`;
-    if (navigator.share) {
-      navigator.share({ url: resumeUrl, title: "My Resume" });
-    } else {
-      navigator.clipboard.writeText(resumeUrl);
-      toast.success("Link copied to clipboard!");
-    }
-  };
-
+  // 5. DOWNLOAD FUNCTION (Direct File Download)
   const downloadResume = async () => {
-    const originalElement = document.getElementById('resume-preview');
-    if (!originalElement) return;
-
-    toast.success("Preparing high-quality A4 PDF...");
-
-    const tempContainer = document.createElement('div');
-    tempContainer.className = 'capture-sandbox';
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.top = '0';
+    const element = document.getElementById("resume-preview-id");
+    if (!element) return toast.error("Preview not ready");
     
-    const clonedElement = originalElement.cloneNode(true);
-    clonedElement.style.transform = 'none';
-    clonedElement.style.zoom = '1';
-
-    tempContainer.appendChild(clonedElement);
-    document.body.appendChild(tempContainer);
-
     try {
-      const canvas = await html2canvasPro(clonedElement, {
-        scale: 3, 
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        onclone: (clonedDoc) => {
-          const elements = clonedDoc.getElementsByTagName("*");
-          for (let i = 0; i < elements.length; i++) {
-            const style = window.getComputedStyle(elements[i]);
-            elements[i].style.color = style.color;
-            elements[i].style.backgroundColor = style.backgroundColor;
-            elements[i].style.borderColor = style.borderColor;
-          }
-        }
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
-      pdf.save(`${resumeData.personal_info?.full_name || 'resume'}.pdf`);
+      toast.success("Downloading PDF...");
+      await document.fonts.ready;
       
-      toast.success("Downloaded successfully!");
-    } catch (error) {
-      console.error("Capture Error:", error);
-      toast.error("Failed to generate PDF.");
-    } finally {
-      document.body.removeChild(tempContainer);
+      const opt = {
+        margin: 0,
+        filename: `${resumeData?.personal_info?.full_name || 'Resume'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+      
+    } catch (e) {
+      console.error(e);
+      toast.error("Download failed");
     }
   };
 
-  if (!resumeData) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="animate-spin text-blue-500" size={40} />
-    </div>
-  );
+  // 6. Toggle Public/Private Visibility
+  const toggleVisibility = async () => {
+    const newStatus = !resumeData.public;
+    try {
+        setResumeData(prev => ({ ...prev, public: newStatus }));
+        await api.put('/api/resumes/update', { 
+            resumeId, 
+            resumeData: { public: newStatus } 
+        }, { headers: { Authorization: token } });
+        toast.success(newStatus ? "Resume is now Public" : "Resume is now Private");
+    } catch (e) {
+        toast.error("Update failed");
+    }
+  };
+
+  // 7. SHARE FUNCTION (Native OS Share Menu)
+  const handleShare = async () => {
+    const url = `${window.location.origin}/view/${resumeId}`;
+    const title = `${resumeData.personal_info?.full_name || 'My'} Resume`;
+    const text = "Check out my professional resume created with Resume Builder.";
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        toast.success("Shared successfully!");
+      } catch (error) {
+        console.log('Share cancelled', error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard!");
+      } catch (err) {
+        toast.error("Failed to copy link");
+      }
+    }
+  };
+
+  if (!resumeData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-slate-500">
+        <Loader2 className="animate-spin mr-2" /> Loading Resume...
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <Link to={'/app'} className="no-print inline-flex gap-2 items-center text-slate-500 hover:text-slate-700 mb-6">
-        <ArrowLeftIcon className="w-4 h-4" /> Back to Dashboard
+    <div className="min-h-screen bg-slate-50 max-w-[1600px] mx-auto px-6 py-8">
+      {/* Top Bar */}
+      <Link to="/app" className="inline-flex items-center gap-2 text-slate-500 hover:text-green-600 mb-6 font-medium transition-colors">
+        <ArrowLeftIcon size={18} /> Back to Dashboard
       </Link>
 
-      <div className="grid lg:grid-cols-12 gap-8">
-        {/* LEFT PANEL: Editor */}
-        <div className="no-print lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 p-6 relative h-fit">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-slate-100 rounded-t-xl overflow-hidden">
-            <div 
-              className="h-full bg-green-500 transition-all duration-500" 
-              style={{ width: `${((activeSectionIndex + 1) / sections.length) * 100}%` }} 
-            />
-          </div>
-
-          <div className="flex justify-between items-center mb-8 mt-2">
+      <div className="grid lg:grid-cols-12 gap-8 items-start">
+        
+        {/* === LEFT SIDE: EDITOR === */}
+        <div className="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col z-10 relative">
+          
+          {/* Editor Header */}
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+            <div className="flex gap-4">
+               <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
+               <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
+            </div>
+            
             <div className="flex items-center gap-3">
-              <TemplateSelector
-                selectedTemplate={resumeData.template}
-                onChange={(t) => setResumeData(prev => ({ ...prev, template: t }))}
-              />
-              <Colorpicker
-                selectedColor={resumeData.accent_color}
-                onChange={(c) => setResumeData(prev => ({ ...prev, accent_color: c }))}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setActiveSectionIndex(prev => Math.max(prev - 1, 0))} disabled={activeSectionIndex === 0} className="p-2 hover:bg-slate-100 rounded-lg disabled:opacity-30">
-                <ChevronLeft size={20} />
-              </button>
-              <span className="text-xs font-bold text-slate-400">{activeSectionIndex + 1} / {sections.length}</span>
-              <button onClick={() => setActiveSectionIndex(prev => Math.min(prev + 1, sections.length - 1))} disabled={activeSectionIndex === sections.length - 1} className="p-2 hover:bg-slate-100 rounded-lg disabled:opacity-30">
-                <ChevronRight size={20} />
-              </button>
+                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={32} strokeWidth={3} /></button>
+                <span className="text-sm font-black text-slate-400 w-12 text-center select-none">{activeSectionIndex + 1} / {sections.length}</span>
+                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronRight size={32} strokeWidth={3} /></button>
             </div>
           </div>
 
-          <div className="min-h-[400px]">
-            {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info} onChange={(d) => setResumeData(prev => ({ ...prev, personal_info: d }))} removeBackground={removeBackground} setRemoveBackground={setRemoveBackground} />}
-            {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary} onChange={(d) => setResumeData(prev => ({ ...prev, professional_summary: d }))} />}
-            {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience} onChange={(d) => setResumeData(prev => ({ ...prev, experience: d }))} />}
-            {activeSection.id === 'education' && <EducationForm data={resumeData.education} onChange={(d) => setResumeData(prev => ({ ...prev, education: d }))} />}
-            {activeSection.id === 'projects' && <ProjectForm data={resumeData.project} onChange={(d) => setResumeData(prev => ({ ...prev, project: d }))} />}
-            {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills} onChange={(d) => setResumeData(prev => ({ ...prev, skills: d }))} />}
+          {/* Editor Body - REMOVED DUPLICATE TITLES HERE */}
+          <div className="p-6 min-h-[500px]">
+             {/* The duplicate <h2> and <p> tags are removed. The Forms below have their own titles. */}
+             {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
+             {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
+             {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
+             {activeSection.id === 'education' && <EducationForm data={resumeData.education || []} onChange={(d) => handleDataChange('education', d)} />}
+             {activeSection.id === 'projects' && <ProjectForm data={resumeData.project || []} onChange={(d) => handleDataChange('project', d)} />}
+             {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 space-y-3">
-            <button onClick={saveResume} disabled={isSaving} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2">
-              {isSaving ? <Loader2 className="animate-spin" size={20} /> : "Save Changes"}
+          {/* Editor Footer */}
+          <div className="p-6 border-t border-slate-100 space-y-3">
+            <button onClick={saveResume} disabled={isSaving} className="w-full py-3 bg-green-600 text-white hover:bg-green-700 rounded-xl font-bold transition-all flex justify-center items-center gap-2 shadow-md shadow-green-100">
+                {isSaving ? <Loader2 className="animate-spin" /> : "Save Changes"}
             </button>
+
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={changeResumeVisibility} className="flex items-center justify-center p-3 gap-2 text-xs font-bold border border-slate-200 text-slate-600 rounded-lg">
-                {resumeData.public ? <EyeIcon size={16} /> : <EyeOffIcon size={16} />} {resumeData.public ? 'Public' : 'Private'}
+              <button 
+                onClick={toggleVisibility} 
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+              >
+                  {resumeData.public ? <EyeIcon size={18}/> : <EyeOffIcon size={18}/>}
+                  {resumeData.public ? "Public" : "Private"}
               </button>
-              <button onClick={downloadResume} className="flex items-center justify-center p-3 gap-2 text-xs font-bold bg-slate-800 text-white rounded-lg">
-                <DownloadIcon size={16} /> Download
+
+              <button onClick={downloadResume} className="flex items-center justify-center gap-2 py-3 bg-slate-800 text-white rounded-xl text-sm font-bold hover:bg-slate-900 transition-all">
+                  <DownloadIcon size={18}/> Download PDF
               </button>
             </div>
+
+            {resumeData.public && (
+              <button onClick={handleShare} className="w-full py-3 border-2 border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-blue-100 transition-all">
+                <Share2Icon size={18} /> Share Resume Link
+              </button>
+            )}
           </div>
         </div>
 
-        {/* RIGHT PANEL: Live Preview */}
-        <div className="lg:col-span-7 max-lg:mt-6 flex justify-center bg-slate-50 p-4 rounded-xl overflow-hidden">
-          <div className="sticky top-8 w-full flex justify-center">
-            <div className="w-full overflow-x-auto custom-scrollbar flex justify-center">
-              <div 
-                id="resume-preview" 
-                className="bg-white shadow-2xl origin-top transition-all duration-300"
-                style={{ transform: "scale(0.8)", transformOrigin: "top center", marginBottom: "-60mm" }} 
-              >
-                <ResumePreview
-                  data={resumeData}
-                  template={resumeData.template}
-                  accentColor={resumeData.accent_color}
-                />
+        {/* === RIGHT SIDE: PREVIEW === */}
+        <div className="lg:col-span-7 h-full sticky top-8">
+           <div className="bg-slate-200/50 rounded-2xl border border-slate-200/60 shadow-inner p-4 md:p-8 flex justify-center items-start overflow-hidden">
+              <div className="w-full max-h-[85vh] overflow-y-auto custom-scrollbar rounded-md">
+                  <div className="flex justify-center min-h-full p-4">
+                     {/* Preview Component */}
+                     <div id="resume-preview-id" className="bg-white shadow-2xl w-[210mm] min-h-[297mm] origin-top">
+                        {debouncedResumeData && (
+                          <ResumePreview 
+                              data={debouncedResumeData} 
+                              template={debouncedResumeData.template} 
+                              accentColor={debouncedResumeData.accent_color} 
+                          />
+                        )}
+                     </div>
+                  </div>
               </div>
-            </div>
-          </div>
+           </div>
         </div>
 
       </div>

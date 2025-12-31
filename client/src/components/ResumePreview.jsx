@@ -5,11 +5,14 @@ import MinimalTemplate from '../assets/templates/MinimalTemplate';
 import MinimalImageTemplate from '../assets/templates/MinimalImageTemplate';
 import ProfessionalTemplate from '../assets/templates/ProfessionalTemplate';
 
-const ResumePreview = ({ data, template, accentColor, classes = "" }) => {
+const ResumePreview = ({ data, template, accentColor }) => {
+  
+  // 1. Data Sanitization (Kept from your code - ensures data is clean)
   const sanitizedData = useMemo(() => ({
     ...data,
     personal_info: {
       ...data.personal_info,
+      // Handle edge case where linkedin might have "linked:" prefix
       linkedin: data.personal_info?.linkedin?.replace("linked:", "")
     },
     experience: Array.isArray(data.experience)
@@ -30,13 +33,7 @@ const ResumePreview = ({ data, template, accentColor, classes = "" }) => {
     education: Array.isArray(data.education) ? data.education : []
   }), [data]);
 
-  const sections = ["personal_info", "professional_summary", "experience", "education", "project", "skills"];
-  const completedSections = sections.filter(sec => {
-    const val = sanitizedData[sec];
-    return val && (Array.isArray(val) ? val.length > 0 : true);
-  });
-  const progress = Math.round((completedSections.length / sections.length) * 100);
-
+  // 2. Select Template Component
   const renderTemplate = () => {
     switch(template){
       case "modern": return <ModernTemplate data={sanitizedData} accentColor={accentColor}/>;
@@ -48,26 +45,9 @@ const ResumePreview = ({ data, template, accentColor, classes = "" }) => {
   };
 
   return (
-    /* Use 'resume-container' for mobile-friendly scaling */
-    <div className='w-full bg-gray-100 flex justify-center p-0 md:p-4 print:p-0'>
-      <div 
-        id="resume-preview" 
-        className={`w-full max-w-full md:max-w-[8.5in] bg-white transition-all duration-300 
-        print:shadow-none print:border-none print:m-0 shadow-sm ${classes}`}
-      >
-        {/* Progress Bar - Hidden when printing */}
-        <div className="w-full bg-gray-200 h-1 print:hidden">
-          <div
-            className="bg-green-500 h-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* The template itself must use responsive layout utilities (flex-wrap, grid-cols-1 md:grid-cols-2) */}
-        <div className="responsive-template-wrapper">
-          {renderTemplate()}
-        </div>
-      </div>
+    // Clean wrapper. Removed progress bar so it doesn't show in PDF.
+    <div className="w-full h-full bg-white text-left">
+        {renderTemplate()}
     </div>
   );
 };
