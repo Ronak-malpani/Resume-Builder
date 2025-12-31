@@ -2,19 +2,24 @@ import React from 'react';
 import { Mail, Phone, Linkedin } from "lucide-react";
 
 const ClassicTemplate = ({ data, accentColor }) => {
+    
+    // 1. ROBUST DATE FORMATTER
     const formatDate = (dateStr) => {
         if (!dateStr) return "";
         try {
+            if (dateStr.length === 4) return dateStr;
             const parts = dateStr.split("-");
             const year = parts[0];
-            const monthIndex = parseInt(parts[1], 10) - 1;
+            const monthIndex = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
             const date = new Date(year, monthIndex);
+            if (isNaN(date.getTime())) return dateStr;
             return date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
         } catch (e) {
             return dateStr;
         }
     };
 
+    // 2. BULLET POINT RENDERER
     const renderBullets = (description) => {
         if (!description || typeof description !== 'string') return null;
         return description
@@ -22,7 +27,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
             .map(line => line.trim())
             .filter(line => line !== "")
             .map((bullet, i) => (
-                <li key={i} className="pl-1 mb-0.5 list-disc ml-4 text-[12px] text-gray-600 leading-normal">
+                <li key={i} className="pl-1 mb-0.5 list-disc ml-4 text-[12px] text-gray-700 leading-normal">
                     {bullet}
                 </li>
             ));
@@ -31,10 +36,10 @@ const ClassicTemplate = ({ data, accentColor }) => {
     const hasEducation = data.education && data.education.length > 0 && data.education.some(edu => edu.institution?.trim());
 
     return (
-        /* Reduced vertical padding from p-12 to p-8 to pull content up */
-        <div className="max-w-4xl mx-auto p-8 bg-white text-gray-800 shadow-lg font-serif print:shadow-none print:p-6 min-h-screen lg:min-h-[11in]">
+        // A4 CONTAINER
+        <div className="w-[210mm] min-h-[297mm] mx-auto px-8 py-10 bg-white text-gray-800 shadow-lg font-serif print:shadow-none overflow-hidden break-words">
             
-            {/* HEADER SECTION - Tightened margins */}
+            {/* HEADER SECTION */}
             <header className="text-center mb-6 pb-4 border-b-2" style={{ borderColor: accentColor }}>
                 <h1 className="text-3xl font-bold mb-2 uppercase tracking-tight" style={{ color: accentColor }}>
                     {data.personal_info?.full_name || "Your Name"}
@@ -55,25 +60,27 @@ const ClassicTemplate = ({ data, accentColor }) => {
                     {data.personal_info?.linkedin && (
                         <div className="flex items-center gap-1.5">
                             <Linkedin size={13} style={{ color: accentColor }}/>
-                            <span className="text-gray-800">{data.personal_info.linkedin}</span>
+                            <span className="text-gray-800">
+                                {data.personal_info.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '')}
+                            </span>
                         </div>
                     )}
                 </div>
             </header>
 
-            {/* PROFESSIONAL SUMMARY - Reduced mb-8 to mb-5 */}
+            {/* PROFESSIONAL SUMMARY */}
             {data.professional_summary && (
                 <section className="mb-5">
                     <h2 className="text-md font-bold mb-1.5 border-b uppercase tracking-widest" style={{ color: accentColor }}>
                         Professional Summary
                     </h2>
-                    <p className="text-[12px] text-gray-600 leading-relaxed italic">
+                    <p className="text-[12px] text-gray-700 leading-relaxed italic text-justify">
                         {data.professional_summary}
                     </p>
                 </section>
             )}
 
-            {/* EXPERIENCE SECTION - Reduced space-y-6 to space-y-4 */}
+            {/* EXPERIENCE SECTION */}
             {data.experience && data.experience.length > 0 && (
                 <section className="mb-5">
                     <h2 className="text-md font-bold mb-3 border-b uppercase tracking-widest" style={{ color: accentColor }}>
@@ -87,7 +94,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
                                         {exp.position || "Position Title"}
                                     </h3>
                                     <span className="text-[10px] font-bold text-gray-500 tabular-nums uppercase">
-                                        {formatDate(exp.start_date)} — {exp.is_current ? "Present" : formatDate(exp.end_date)}
+                                        {formatDate(exp.startDate || exp.start_date)} — {exp.is_current ? "Present" : formatDate(exp.endDate || exp.end_date)}
                                     </span>
                                 </div>
                                 <div className="text-[12px] font-semibold italic text-gray-700 mb-1">
@@ -123,7 +130,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
 
             {/* DYNAMIC GRID: Education and Skills */}
             <div className="resume-grid border-t pt-4" style={{ borderColor: `${accentColor}20` }}>
-                {/* EDUCATION SECTION */}
+                {/* EDUCATION */}
                 {hasEducation && (
                     <section>
                         <h2 className="text-md font-bold mb-2 uppercase tracking-widest" style={{ color: accentColor }}>
@@ -140,7 +147,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
                                         {edu.gpa && <p className="text-[10px] text-gray-500">GPA: <span className="font-bold">{edu.gpa}</span></p>}
                                     </div>
                                     <span className="text-[10px] font-bold text-gray-400 tabular-nums whitespace-nowrap">
-                                        {formatDate(edu.graduation_date)}
+                                        {formatDate(edu.graduationDate || edu.graduation_date)}
                                     </span>
                                 </div>
                             ))}
@@ -148,7 +155,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
                     </section>
                 )}
 
-                {/* TECHNICAL SKILLS SECTION */}
+                {/* SKILLS */}
                 {data.skills && data.skills.length > 0 && (
                     <section>
                         <h2 className="text-md font-bold mb-2 uppercase tracking-widest" style={{ color: accentColor }}>

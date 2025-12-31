@@ -1,20 +1,24 @@
 import React from "react";
 
 const ProfessionalTemplate = ({ data, accentColor }) => {
+  
+  // 1. ROBUST DATE FORMATTER
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     try {
-      const parts = dateStr.split("-");
-      const month = parseInt(parts[1], 10) - 1;
-      return new Date(parts[0], month).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-      });
+        if (dateStr.length === 4) return dateStr;
+        const parts = dateStr.split("-");
+        const year = parts[0];
+        const monthIndex = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
+        const date = new Date(year, monthIndex);
+        if (isNaN(date.getTime())) return dateStr;
+        return date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
     } catch (e) {
-      return dateStr;
+        return dateStr;
     }
   };
 
+  // 2. BULLET POINT RENDERER
   const renderBullets = (description) => {
     if (!description) return null;
     let bulletArray = [];
@@ -34,11 +38,11 @@ const ProfessionalTemplate = ({ data, accentColor }) => {
   };
 
   return (
-    /* Increased base font to 14px and adjusted padding */
-    <div className="max-w-4xl mx-auto bg-white text-black font-serif text-[14px] leading-snug p-8 shadow-md min-h-screen lg:min-h-[11in] print:shadow-none print:p-6">
+    // A4 CONTAINER
+    <div className="w-[210mm] min-h-[297mm] mx-auto bg-white text-black font-serif text-[14px] leading-snug p-8 shadow-md print:shadow-none overflow-hidden break-words">
       
-      {/* Header - Scaled up name */}
-      <header className="text-center mb-5 border-b-2 pb-2" style={{ borderColor: accentColor || '#000' }}>
+      {/* Header */}
+      <header className="text-center mb-5 border-b-2 pb-3" style={{ borderColor: accentColor || '#000' }}>
         <h1 className="text-3xl font-bold uppercase tracking-wide" style={{ color: accentColor || '#000' }}>
           {data.personal_info?.full_name || "Your Name"}
         </h1>
@@ -47,14 +51,14 @@ const ProfessionalTemplate = ({ data, accentColor }) => {
           {data.personal_info?.phone && <span>| {data.personal_info.phone}</span>}
           {data.personal_info?.linkedin && (
             <span className="hover:underline">
-              | {data.personal_info.linkedin.includes(':') ? data.personal_info.linkedin.split(':').pop() : "LinkedIn"}
+              | {data.personal_info.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '')}
             </span>
           )}
           {data.personal_info?.website && <span>| {data.personal_info.website}</span>}
         </div>
       </header>
 
-      {/* Professional Summary - Increased summary text size */}
+      {/* Professional Summary */}
       {data.professional_summary && (
         <section className="mb-5">
           <h2 className="uppercase font-bold border-b border-gray-400 text-gray-900 mb-1.5 tracking-widest text-[12.5px]">
@@ -66,7 +70,7 @@ const ProfessionalTemplate = ({ data, accentColor }) => {
         </section>
       )}
 
-      {/* Experience - Increased heading and bullet size */}
+      {/* Experience */}
       {data.experience && data.experience.length > 0 && (
         <section className="mb-5">
           <h2 className="uppercase font-bold border-b border-gray-400 text-gray-900 mb-2.5 tracking-widest text-[12.5px]">
@@ -75,9 +79,9 @@ const ProfessionalTemplate = ({ data, accentColor }) => {
           {data.experience.map((exp, index) => (
             <div key={index} className="mb-4">
               <div className="flex justify-between items-baseline">
-                <h3 className="font-bold text-gray-900 text-[14.5px]">{exp.position}</h3>
+                <h3 className="font-bold text-gray-900 text-[14.5px]">{exp.position || exp.title}</h3>
                 <span className="text-[11px] font-bold text-gray-600 uppercase">
-                  {formatDate(exp.start_date)} – {exp.is_current ? "Present" : formatDate(exp.end_date)}
+                  {formatDate(exp.startDate || exp.start_date)} – {exp.is_current ? "Present" : formatDate(exp.endDate || exp.end_date)}
                 </span>
               </div>
               <div className="flex justify-between italic text-gray-800 text-[13.5px] mb-1">
@@ -92,7 +96,7 @@ const ProfessionalTemplate = ({ data, accentColor }) => {
         </section>
       )}
 
-      {/* Projects - Scaled up project names */}
+      {/* Projects */}
       {data.project && data.project.length > 0 && (
         <section className="mb-5">
           <h2 className="uppercase font-bold border-b border-gray-400 text-gray-900 mb-2.5 tracking-widest text-[12.5px]">
@@ -109,7 +113,7 @@ const ProfessionalTemplate = ({ data, accentColor }) => {
         </section>
       )}
 
-      {/* Education - Scaled up degree text */}
+      {/* Education */}
       {data.education && data.education.length > 0 && (
         <section className="mb-5">
           <h2 className="uppercase font-bold border-b border-gray-400 text-gray-900 mb-2.5 tracking-widest text-[12.5px]">
@@ -122,7 +126,7 @@ const ProfessionalTemplate = ({ data, accentColor }) => {
                   {edu.degree}
                 </h3>
                 <span className="text-[11px] font-bold text-gray-600">
-                  {formatDate(edu.graduation_date)}
+                  {formatDate(edu.graduationDate || edu.graduation_date)}
                 </span>
               </div>
               <div className="flex justify-between text-gray-700 text-[13px]">
@@ -134,14 +138,15 @@ const ProfessionalTemplate = ({ data, accentColor }) => {
         </section>
       )}
 
-      {/* Skills - Increased skill text */}
+      {/* Skills */}
       {data.skills && data.skills.length > 0 && (
         <section className="mb-4">
           <h2 className="uppercase font-bold border-b border-gray-400 text-gray-900 mb-2 tracking-widest text-[12.5px]">
             Skills
           </h2>
-          <p className="text-[13px] text-gray-800 leading-relaxed">
-            {data.skills.join(" • ")}
+          <p className="text-[13px] text-gray-800 leading-relaxed font-medium">
+            {/* Added check for array to prevent crashes */}
+            {Array.isArray(data.skills) ? data.skills.join(" • ") : ""}
           </p>
         </section>
       )}
