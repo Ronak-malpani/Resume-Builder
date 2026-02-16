@@ -48,10 +48,8 @@ app.use((err, req, res, next) => {
   res.status(500).send({ error: 'Something went wrong on the server!' });
 });
 
-if (process.env.NODE_ENV === "development") {
-  app.listen(PORT, () => {
-    console.log(`Server running locally on port ${PORT}`);
-  });
-}
+import serverless from "serverless-http";
+
+export const handler = serverless(app);
 
 export default app;
