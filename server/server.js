@@ -21,7 +21,8 @@ app.use(express.json());
 // Optimized CORS for Production
 app.use(cors({ 
   origin: [
-    "https://resume-builder-drab-eta.vercel.app", // Your specific Vercel URL
+    "https://resume-builder-drab-eta.vercel.app",  //domain for deployment
+    "https://resume-builder-ej0e00raz-ronaks-projects-305c69af.vercel.app", //deployment 
     "http://localhost:5173" // Allows you to still test locally with Vite
   ], 
   credentials: true 
@@ -47,6 +48,10 @@ app.use((err, req, res, next) => {
   res.status(500).send({ error: 'Something went wrong on the server!' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV === "development") {
+  app.listen(PORT, () => {
+    console.log(`Server running locally on port ${PORT}`);
+  });
+}
+
+export default app;
