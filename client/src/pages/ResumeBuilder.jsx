@@ -46,33 +46,41 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Calculate scaling for desktop viewports
+  // Calculate scaling for desktop viewports & mobile fallbacks
   useEffect(() => {
     const updateScale = () => {
-      if (!previewBoxRef.current) return;
-      const { clientWidth, clientHeight } = previewBoxRef.current;
-
       const a4Width = 794; 
       const a4Height = 1123;
+      const isMobile = window.innerWidth < 1024;
 
+      if (isMobile) {
+        // Mobile: Calculate directly based on window width so it never defaults to 0
+        const padding = 32;
+        const screenWidth = window.innerWidth - padding;
+        const scale = screenWidth / a4Width;
+        setPreviewScale(Math.max(scale, 0.35));
+        return;
+      }
+
+      // Desktop: Height-fitted scaling inside container
+      if (!previewBoxRef.current) return;
+      const { clientWidth, clientHeight } = previewBoxRef.current;
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const isMobile = window.innerWidth < 1024;
-      if (isMobile) {
-        // Mobile scale based on device screen width
-        setPreviewScale((clientWidth - 32) / a4Width);
-      } else {
-        // Desktop scale fits strictly inside container height
-        const scaleX = (clientWidth - 16) / a4Width;
-        const scaleY = (clientHeight - 16) / a4Height;
-        const fitScale = Math.min(scaleX, scaleY);
-        setPreviewScale(Math.max(fitScale, 0.35));
-      }
+      const scaleX = (clientWidth - 16) / a4Width;
+      const scaleY = (clientHeight - 16) / a4Height;
+      const fitScale = Math.min(scaleX, scaleY);
+      setPreviewScale(Math.max(fitScale, 0.35));
     };
 
     updateScale();
+    // Extra timeout trigger to handle initial dynamic layout renders on mobile devices
+    const timer = setTimeout(updateScale, 100);
     window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateScale);
+    };
   }, [resumeData]);
 
   // 1. Load Resume
@@ -284,7 +292,7 @@ const ResumeBuilder = () => {
         {/* === RIGHT BOX: PREVIEW === */}
         <div 
           ref={previewBoxRef}
-          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-center h-[520px] lg:h-full lg:min-h-0 overflow-hidden relative p-2 lg:p-1 mb-6 lg:mb-0"
+          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-start lg:items-center min-h-[500px] lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-1 mb-6 lg:mb-0"
         >
           {/* Scaled Render Container */}
           <div 
@@ -292,9 +300,9 @@ const ResumeBuilder = () => {
               width: '210mm',
               height: '297mm',
               transform: `scale(${previewScale})`,
-              transformOrigin: 'top center'
+              transformOrigin: window.innerWidth < 1024 ? 'top center' : 'center center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start lg:items-center mt-2 lg:mt-0"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start lg:items-center"
           >
             <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs overflow-hidden shadow-sm lg:shadow-none">
                {debouncedResumeData && (
