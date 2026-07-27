@@ -30,7 +30,7 @@ const ResumeBuilder = () => {
   const [debouncedResumeData, setDebouncedResumeData] = useState(null);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [previewScale, setPreviewScale] = useState(0.5);
+  const [previewScale, setPreviewScale] = useState(0.65);
 
   const previewBoxRef = useRef(null);
 
@@ -46,24 +46,30 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Dynamic Auto-Fit Scaling for Both Mobile and Desktop
+  // Dynamic Scale Calculation for A4 Preview Box
   useEffect(() => {
     const updateScale = () => {
       if (!previewBoxRef.current) return;
       const { clientWidth, clientHeight } = previewBoxRef.current;
 
-      // Standard A4 dimensions in px at standard 96 DPI
       const a4Width = 794; 
       const a4Height = 1123;
 
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      // Calculate exact scaling factor to fit within container bounds without scrolling
-      const scaleX = (clientWidth - 16) / a4Width;
-      const scaleY = (clientHeight - 16) / a4Height;
+      // Calculate fit factor for desktop container
+      const scaleX = (clientWidth - 24) / a4Width;
+      const scaleY = (clientHeight - 24) / a4Height;
 
-      const fitScale = Math.min(scaleX, scaleY);
-      setPreviewScale(Math.max(fitScale, 0.2));
+      // On mobile viewports, enforce a baseline readable scale
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) {
+        const mobileScale = (clientWidth - 16) / a4Width;
+        setPreviewScale(Math.max(mobileScale, 0.45));
+      } else {
+        const fitScale = Math.min(scaleX, scaleY);
+        setPreviewScale(Math.max(fitScale, 0.5));
+      }
     };
 
     updateScale();
@@ -98,7 +104,7 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // 3. Update Handler
+  // 3. Safe Update Handler
   const handleDataChange = (sectionKey, newData) => {
     setResumeData((prev) => ({
       ...prev,
@@ -205,22 +211,22 @@ const ResumeBuilder = () => {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-50 flex flex-col p-2 md:p-3">
+    <div className="min-h-screen bg-slate-50 flex flex-col p-2 md:p-4">
       
-      {/* Navigation Link */}
-      <div className="shrink-0 mb-1">
+      {/* Navbar Link (Always visible top bar) */}
+      <div className="shrink-0 mb-2">
         <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-xs md:text-sm font-medium transition-colors">
           <ArrowLeftIcon size={14} /> Back to Dashboard
         </Link>
       </div>
 
-      {/* Main Container - Equal Split Dashboard */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 min-w-0 overflow-hidden">
+      {/* Main Builder Area: Stacked on Mobile, Side-by-Side 50/50 on Desktop */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[calc(100vh-60px)] min-h-0">
         
-        {/* === LEFT BOX: EDITOR === */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
+        {/* === LEFT BOX: EDITOR FORM === */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0 overflow-hidden">
           
-          {/* Header Controls */}
+          {/* Section Header Controls */}
           <div className="p-2 sm:p-3 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
             <div className="flex gap-2">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
@@ -234,8 +240,8 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Area - Zero Scroll Container */}
-          <div className="p-2 sm:p-3 flex-1 overflow-hidden flex flex-col min-h-0 justify-center">
+          {/* Form Content Area: Scrollable internally so all fields remain editable */}
+          <div className="p-3 md:p-4 flex-1 overflow-y-auto custom-scrollbar max-h-[60vh] lg:max-h-none">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -272,10 +278,10 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT BOX: PREVIEW === */}
+        {/* === RIGHT BOX: RESUME PREVIEW === */}
         <div 
           ref={previewBoxRef}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 flex justify-center items-center h-full min-h-0 min-w-0 overflow-hidden relative p-1 md:p-2"
+          className="bg-white rounded-xl shadow-sm border border-slate-200 flex justify-center items-center h-[500px] lg:h-full min-h-0 overflow-hidden relative p-2"
         >
           {/* Scaled Render Container */}
           <div 
@@ -285,7 +291,7 @@ const ResumeBuilder = () => {
               transform: `scale(${previewScale})`,
               transformOrigin: 'center center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
+            className="shrink-0 transition-transform duration-100 ease-out flex justify-center items-center"
           >
             <div id="resume-preview-id" className="w-full h-full bg-white shadow-md rounded-sm overflow-hidden">
                {debouncedResumeData && (
