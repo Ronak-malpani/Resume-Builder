@@ -36,8 +36,8 @@ const ResumeBuilder = () => {
 
   // Define Sections
   const sections = useMemo(() => [
-    { id: "personal", name: "Personal Info" },
-    { id: "summary", name: "Summary" },
+    { id: "personal", name: "Personal Information" },
+    { id: "summary", name: "Professional Summary" },
     { id: "experience", name: "Experience" },
     { id: "education", name: "Education" },
     { id: "projects", name: "Projects" },
@@ -46,7 +46,7 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Auto-fit A4 preview sheet strictly inside right container height
+  // Calculate scaling for desktop viewports
   useEffect(() => {
     const updateScale = () => {
       if (!previewBoxRef.current) return;
@@ -57,14 +57,14 @@ const ResumeBuilder = () => {
 
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const scaleX = (clientWidth - 16) / a4Width;
-      const scaleY = (clientHeight - 16) / a4Height;
-
       const isMobile = window.innerWidth < 1024;
       if (isMobile) {
-        setPreviewScale(Math.max((clientWidth - 16) / a4Width, 0.42));
+        // Mobile scale based on device screen width
+        setPreviewScale((clientWidth - 32) / a4Width);
       } else {
-        // Fits strictly within available height on desktop screens without overflow
+        // Desktop scale fits strictly inside container height
+        const scaleX = (clientWidth - 16) / a4Width;
+        const scaleY = (clientHeight - 16) / a4Height;
         const fitScale = Math.min(scaleX, scaleY);
         setPreviewScale(Math.max(fitScale, 0.35));
       }
@@ -209,41 +209,42 @@ const ResumeBuilder = () => {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-50 flex flex-col p-2 lg:p-3">
+    // Mobile: natural min-h-screen scrolling. Desktop: fixed h-screen viewport
+    <div className="min-h-screen lg:h-screen w-full lg:overflow-hidden bg-slate-50 flex flex-col p-4 lg:p-3">
       
-      {/* Top Navigation - Always Visible */}
-      <div className="shrink-0 mb-1 flex justify-between items-center px-1">
-        <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-xs font-medium transition-colors">
-          <ArrowLeftIcon size={14} /> Back to Dashboard
+      {/* Top Bar Link */}
+      <div className="shrink-0 mb-4 lg:mb-1 flex justify-between items-center">
+        <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-sm lg:text-xs font-medium transition-colors">
+          <ArrowLeftIcon size={16} /> Back to Dashboard
         </Link>
       </div>
 
-      {/* Main 50/50 Equal Split Desktop Grid Container */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 overflow-hidden">
+      {/* Main Grid: Mobile stacks vertically, Desktop displays 50/50 side-by-side */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-3 min-h-0 lg:overflow-hidden">
         
         {/* === LEFT BOX: EDITOR === */}
-        <div className="bg-white rounded-xl border border-slate-200 flex flex-col h-full min-h-0 overflow-hidden shadow-xs">
+        <div className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 flex flex-col shadow-sm lg:shadow-xs lg:h-full lg:min-h-0 lg:overflow-hidden">
           
           {/* Controls Header */}
-          <div className="p-2 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
-            <div className="flex gap-1.5">
+          <div className="p-4 lg:p-2 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
+            <div className="flex gap-2 lg:gap-1.5">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
             </div>
             
-            <div className="flex items-center gap-1">
-                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-0.5 transition-colors"><ChevronLeft size={18} strokeWidth={2.5} /></button>
-                <span className="text-[11px] font-bold text-slate-400 w-10 text-center select-none">{activeSectionIndex + 1}/{sections.length}</span>
-                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-0.5 transition-colors"><ChevronRight size={18} strokeWidth={2.5} /></button>
+            <div className="flex items-center gap-2 lg:gap-1">
+                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 lg:p-0.5 transition-colors"><ChevronLeft size={22} className="lg:w-4 lg:h-4" strokeWidth={2.5} /></button>
+                <span className="text-xs lg:text-[11px] font-bold text-slate-400 w-10 text-center select-none">{activeSectionIndex + 1}/{sections.length}</span>
+                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 lg:p-0.5 transition-colors"><ChevronRight size={22} className="lg:w-4 lg:h-4" strokeWidth={2.5} /></button>
             </div>
           </div>
 
-          {/* Form Inputs Container - Ultra Compact Whitespace Override */}
-          <div className="p-2 flex-1 overflow-y-auto custom-scrollbar min-h-0 text-xs
-                          [&_label]:mb-0.5 [&_label]:text-[11px] [&_label]:font-semibold [&_label]:text-slate-600 
-                          [&_input]:py-1 [&_input]:px-2.5 [&_input]:text-xs [&_input]:h-8 [&_input]:mb-2 
-                          [&_textarea]:py-1 [&_textarea]:px-2.5 [&_textarea]:text-xs 
-                          [&_p]:hidden [&_h2]:hidden [&_.space-y-4]:space-y-1 [&_.space-y-6]:space-y-1">
+          {/* Form Content: Original Spacing on Mobile, Ultra-Compact on Desktop */}
+          <div className="p-4 lg:p-2 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 text-sm lg:text-xs
+                          lg:[&_label]:mb-0.5 lg:[&_label]:text-[11px] lg:[&_label]:font-semibold lg:[&_label]:text-slate-600 
+                          lg:[&_input]:py-1 lg:[&_input]:px-2.5 lg:[&_input]:text-xs lg:[&_input]:h-8 lg:[&_input]:mb-2 
+                          lg:[&_textarea]:py-1 lg:[&_textarea]:px-2.5 lg:[&_textarea]:text-xs 
+                          lg:[&_p]:hidden lg:[&_h2]:hidden lg:[&_.space-y-4]:space-y-1 lg:[&_.space-y-6]:space-y-1">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -252,38 +253,38 @@ const ResumeBuilder = () => {
              {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          {/* Compact Action Footer */}
-          <div className="p-2 border-t border-slate-100 space-y-1 shrink-0 bg-white">
-            <button onClick={saveResume} disabled={isSaving} className="w-full py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-md font-bold text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
-                {isSaving ? <Loader2 className="animate-spin" size={14} /> : "Save Changes"}
+          {/* Action Footer */}
+          <div className="p-4 lg:p-2 border-t border-slate-100 space-y-2 lg:space-y-1 shrink-0 bg-white rounded-b-2xl lg:rounded-b-xl">
+            <button onClick={saveResume} disabled={isSaving} className="w-full py-3 lg:py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-xl lg:rounded-md font-bold text-sm lg:text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
+                {isSaving ? <Loader2 className="animate-spin" size={16} /> : "Save Changes"}
             </button>
 
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-2 gap-2 lg:gap-1">
               <button 
                 onClick={toggleVisibility} 
-                className={`flex items-center justify-center gap-1 py-1 rounded-md text-[11px] font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+                className={`flex items-center justify-center gap-1 py-2 lg:py-1 rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
               >
-                  {resumeData.public ? <EyeIcon size={13}/> : <EyeOffIcon size={13}/>}
+                  {resumeData.public ? <EyeIcon size={14}/> : <EyeOffIcon size={14}/>}
                   {resumeData.public ? "Public" : "Private"}
               </button>
 
-              <button onClick={downloadResume} className="flex items-center justify-center gap-1 py-1 bg-slate-800 text-white rounded-md text-[11px] font-bold hover:bg-slate-900 transition-all">
-                  <DownloadIcon size={13}/> Download PDF
+              <button onClick={downloadResume} className="flex items-center justify-center gap-1 py-2 lg:py-1 bg-slate-800 text-white rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold hover:bg-slate-900 transition-all">
+                  <DownloadIcon size={14}/> Download PDF
               </button>
             </div>
 
             {resumeData.public && (
-              <button onClick={handleShare} className="w-full py-1 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-md text-[11px] font-bold flex justify-center items-center gap-1 hover:bg-blue-100 transition-all">
-                <Share2Icon size={13} /> Share Resume Link
+              <button onClick={handleShare} className="w-full py-2 lg:py-1 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold flex justify-center items-center gap-1 hover:bg-blue-100 transition-all">
+                <Share2Icon size={14} /> Share Resume Link
               </button>
             )}
           </div>
         </div>
 
-        {/* === RIGHT BOX: PREVIEW (No Gray Background/Border, Pure White Card) === */}
+        {/* === RIGHT BOX: PREVIEW === */}
         <div 
           ref={previewBoxRef}
-          className="bg-white rounded-xl border border-slate-200 shadow-xs flex justify-center items-center h-full min-h-0 overflow-hidden relative p-1"
+          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-center h-[520px] lg:h-full lg:min-h-0 overflow-hidden relative p-2 lg:p-1 mb-6 lg:mb-0"
         >
           {/* Scaled Render Container */}
           <div 
@@ -291,11 +292,11 @@ const ResumeBuilder = () => {
               width: '210mm',
               height: '297mm',
               transform: `scale(${previewScale})`,
-              transformOrigin: 'center center'
+              transformOrigin: 'top center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start lg:items-center mt-2 lg:mt-0"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs overflow-hidden">
+            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs overflow-hidden shadow-sm lg:shadow-none">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
