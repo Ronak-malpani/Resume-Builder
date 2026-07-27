@@ -57,14 +57,14 @@ const ResumeBuilder = () => {
 
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const scaleX = (clientWidth - 20) / a4Width;
-      const scaleY = (clientHeight - 20) / a4Height;
+      const scaleX = (clientWidth - 16) / a4Width;
+      const scaleY = (clientHeight - 16) / a4Height;
 
       const isMobile = window.innerWidth < 1024;
       if (isMobile) {
         setPreviewScale(Math.max((clientWidth - 16) / a4Width, 0.42));
       } else {
-        // Fits strictly within available height on desktop screens
+        // Fits strictly within available height on desktop screens without overflow
         const fitScale = Math.min(scaleX, scaleY);
         setPreviewScale(Math.max(fitScale, 0.35));
       }
@@ -211,20 +211,20 @@ const ResumeBuilder = () => {
   return (
     <div className="h-screen w-screen overflow-hidden bg-slate-50 flex flex-col p-2 lg:p-3">
       
-      {/* Top Header - Always Visible */}
+      {/* Top Navigation - Always Visible */}
       <div className="shrink-0 mb-1 flex justify-between items-center px-1">
         <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-xs font-medium transition-colors">
           <ArrowLeftIcon size={14} /> Back to Dashboard
         </Link>
       </div>
 
-      {/* Main Equal Split Grid Container */}
+      {/* Main 50/50 Equal Split Desktop Grid Container */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 overflow-hidden">
         
         {/* === LEFT BOX: EDITOR === */}
         <div className="bg-white rounded-xl border border-slate-200 flex flex-col h-full min-h-0 overflow-hidden shadow-xs">
           
-          {/* Form Header */}
+          {/* Controls Header */}
           <div className="p-2 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
             <div className="flex gap-1.5">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
@@ -238,8 +238,12 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Inputs Container - Compact scale so all inputs fit within frame */}
-          <div className="p-2 sm:p-3 flex-1 overflow-y-auto custom-scrollbar min-h-0 text-xs space-y-1">
+          {/* Form Inputs Container - Ultra Compact Whitespace Override */}
+          <div className="p-2 flex-1 overflow-y-auto custom-scrollbar min-h-0 text-xs
+                          [&_label]:mb-0.5 [&_label]:text-[11px] [&_label]:font-semibold [&_label]:text-slate-600 
+                          [&_input]:py-1 [&_input]:px-2.5 [&_input]:text-xs [&_input]:h-8 [&_input]:mb-2 
+                          [&_textarea]:py-1 [&_textarea]:px-2.5 [&_textarea]:text-xs 
+                          [&_p]:hidden [&_h2]:hidden [&_.space-y-4]:space-y-1 [&_.space-y-6]:space-y-1">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -248,7 +252,7 @@ const ResumeBuilder = () => {
              {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          {/* Compact Footer */}
+          {/* Compact Action Footer */}
           <div className="p-2 border-t border-slate-100 space-y-1 shrink-0 bg-white">
             <button onClick={saveResume} disabled={isSaving} className="w-full py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-md font-bold text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
                 {isSaving ? <Loader2 className="animate-spin" size={14} /> : "Save Changes"}
@@ -276,7 +280,7 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT BOX: PREVIEW (Clean borderless preview) === */}
+        {/* === RIGHT BOX: PREVIEW (No Gray Background/Border, Pure White Card) === */}
         <div 
           ref={previewBoxRef}
           className="bg-white rounded-xl border border-slate-200 shadow-xs flex justify-center items-center h-full min-h-0 overflow-hidden relative p-1"
