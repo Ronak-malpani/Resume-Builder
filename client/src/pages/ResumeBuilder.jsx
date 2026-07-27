@@ -30,9 +30,9 @@ const ResumeBuilder = () => {
   const [debouncedResumeData, setDebouncedResumeData] = useState(null);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [previewScale, setPreviewScale] = useState(0.5);
+  const [scale, setScale] = useState(1);
 
-  const previewWrapperRef = useRef(null);
+  const previewParentRef = useRef(null);
 
   // Define Sections
   const sections = useMemo(() => [
@@ -46,29 +46,23 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Dynamic Auto-Fit Calculation for Preview
+  // Dynamic Scale Calculation via ResizeObserver
   useEffect(() => {
-    const updateScale = () => {
-      if (!previewWrapperRef.current) return;
-      const containerWidth = previewWrapperRef.current.clientWidth;
-      const containerHeight = previewWrapperRef.current.clientHeight;
+    const parent = previewParentRef.current;
+    if (!parent) return;
 
-      // A4 dimensions in px (approx standard at 96dpi)
-      const a4Width = 794; 
-      const a4Height = 1123;
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const availableWidth = entry.contentRect.width - 32; // subtracted padding
+        // 794px is roughly 210mm at standard 96 DPI
+        const calculatedScale = availableWidth / 794; 
+        setScale(Math.min(Math.max(calculatedScale, 0.35), 1.1));
+      }
+    });
 
-      const scaleX = (containerWidth - 32) / a4Width;
-      const scaleY = (containerHeight - 32) / a4Height;
-
-      // Fit preview inside container width and height without overflow
-      const targetScale = Math.min(scaleX, scaleY, 1);
-      setPreviewScale(Math.max(targetScale, 0.35));
-    };
-
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
-  }, [resumeData]);
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, []);
 
   // 1. Load Resume
   useEffect(() => {
@@ -204,18 +198,21 @@ const ResumeBuilder = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[1700px] mx-auto px-4 md:px-6 py-4 md:py-6">
-      {/* Top Bar */}
-      <Link to="/app" className="inline-flex items-center gap-2 text-slate-500 hover:text-green-600 mb-4 font-medium transition-colors">
-        <ArrowLeftIcon size={18} /> Back to Dashboard
-      </Link>
+    <div className="min-h-screen bg-slate-50 w-full px-4 md:px-8 py-4 md:py-6">
+      {/* Navigation Header */}
+      <div className="w-full max-w-[1800px] mx-auto">
+        <Link to="/app" className="inline-flex items-center gap-2 text-slate-500 hover:text-green-600 mb-4 font-medium transition-colors">
+          <ArrowLeftIcon size={18} /> Back to Dashboard
+        </Link>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Main Grid Section */}
+      <div className="w-full max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* === LEFT SIDE: EDITOR === */}
-        <div className="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col z-10">
+        {/* === LEFT SIDE: EDITOR (Equal Split - 6 Cols) === */}
+        <div className="lg:col-span-6 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col z-10">
           
-          {/* Header */}
+          {/* Editor Header Controls */}
           <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center gap-2">
             <div className="flex gap-2 sm:gap-3">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
@@ -229,8 +226,8 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content */}
-          <div className="p-4 sm:p-5 min-h-[450px]">
+          {/* Form Fields Area */}
+          <div className="p-4 sm:p-6 min-h-[500px]">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -239,7 +236,7 @@ const ResumeBuilder = () => {
              {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          {/* Footer Controls */}
+          {/* Footer Save & Actions */}
           <div className="p-4 sm:p-5 border-t border-slate-100 space-y-3">
             <button onClick={saveResume} disabled={isSaving} className="w-full py-3 bg-green-600 text-white hover:bg-green-700 rounded-xl font-bold transition-all flex justify-center items-center gap-2 shadow-md shadow-green-100">
                 {isSaving ? <Loader2 className="animate-spin" /> : "Save Changes"}
@@ -267,23 +264,24 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT SIDE: PREVIEW CONTAINER === */}
-        <div className="lg:col-span-7 w-full lg:sticky lg:top-4 h-[500px] lg:h-[82vh]">
+        {/* === RIGHT SIDE: PREVIEW CONTAINER (Equal Split - 6 Cols) === */}
+        <div className="lg:col-span-6 w-full lg:sticky lg:top-4 h-[650px] lg:h-[88vh]">
            <div 
-             ref={previewWrapperRef}
-             className="w-full h-full bg-slate-200/60 rounded-2xl border border-slate-200/80 shadow-inner p-4 flex justify-center items-center overflow-hidden relative"
+             ref={previewParentRef}
+             className="w-full h-full bg-slate-200/60 rounded-2xl border border-slate-200/80 shadow-inner p-4 flex justify-center items-start overflow-y-auto overflow-x-hidden custom-scrollbar"
            >
-              {/* Scaled Render Box */}
+              {/* Scaled Render Container */}
               <div 
                 style={{
                   width: '210mm',
-                  height: '297mm',
-                  transform: `scale(${previewScale})`,
-                  transformOrigin: 'center center'
+                  minHeight: '297mm',
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top center',
+                  marginBottom: `calc((297mm * ${scale}) - 297mm)`
                 }}
-                className="shrink-0 transition-transform duration-150 ease-out"
+                className="shrink-0 transition-transform duration-75 ease-out"
               >
-                <div id="resume-preview-id" className="w-full h-full bg-white shadow-2xl">
+                <div id="resume-preview-id" className="w-full h-full bg-white shadow-2xl rounded-sm">
                    {debouncedResumeData && (
                      <ResumePreview 
                          data={debouncedResumeData} 
