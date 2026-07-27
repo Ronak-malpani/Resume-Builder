@@ -105,7 +105,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 5. DOWNLOAD FUNCTION (Direct File Download)
+  // 5. DOWNLOAD FUNCTION
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -145,7 +145,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 7. SHARE FUNCTION (Native OS Share Menu)
+  // 7. SHARE FUNCTION
   const handleShare = async () => {
     const url = `${window.location.origin}/view/${resumeId}`;
     const title = `${resumeData.personal_info?.full_name || 'My'} Resume`;
@@ -177,34 +177,33 @@ const ResumeBuilder = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[1600px] mx-auto px-6 py-8">
+    <div className="min-h-screen bg-slate-50 max-w-[1600px] mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Top Bar */}
-      <Link to="/app" className="inline-flex items-center gap-2 text-slate-500 hover:text-green-600 mb-6 font-medium transition-colors">
+      <Link to="/app" className="inline-flex items-center gap-2 text-slate-500 hover:text-green-600 mb-4 md:mb-6 font-medium transition-colors">
         <ArrowLeftIcon size={18} /> Back to Dashboard
       </Link>
 
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         
         {/* === LEFT SIDE: EDITOR === */}
         <div className="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col z-10 relative">
           
           {/* Editor Header */}
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <div className="flex gap-4">
+          <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-wrap sm:flex-nowrap justify-between items-center gap-4">
+            <div className="flex gap-2 sm:gap-4">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
             </div>
             
-            <div className="flex items-center gap-3">
-                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={32} strokeWidth={3} /></button>
-                <span className="text-sm font-black text-slate-400 w-12 text-center select-none">{activeSectionIndex + 1} / {sections.length}</span>
-                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronRight size={32} strokeWidth={3} /></button>
+            <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={28} className="sm:w-8 sm:h-8" strokeWidth={3} /></button>
+                <span className="text-xs sm:text-sm font-black text-slate-400 w-10 sm:w-12 text-center select-none">{activeSectionIndex + 1} / {sections.length}</span>
+                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronRight size={28} className="sm:w-8 sm:h-8" strokeWidth={3} /></button>
             </div>
           </div>
 
-          {/* Editor Body - REMOVED DUPLICATE TITLES HERE */}
-          <div className="p-6 min-h-[500px]">
-             {/* The duplicate <h2> and <p> tags are removed. The Forms below have their own titles. */}
+          {/* Editor Body */}
+          <div className="p-4 sm:p-6 min-h-[400px] sm:min-h-[500px]">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -214,7 +213,7 @@ const ResumeBuilder = () => {
           </div>
 
           {/* Editor Footer */}
-          <div className="p-6 border-t border-slate-100 space-y-3">
+          <div className="p-4 sm:p-6 border-t border-slate-100 space-y-3">
             <button onClick={saveResume} disabled={isSaving} className="w-full py-3 bg-green-600 text-white hover:bg-green-700 rounded-xl font-bold transition-all flex justify-center items-center gap-2 shadow-md shadow-green-100">
                 {isSaving ? <Loader2 className="animate-spin" /> : "Save Changes"}
             </button>
@@ -242,21 +241,26 @@ const ResumeBuilder = () => {
         </div>
 
         {/* === RIGHT SIDE: PREVIEW === */}
-        <div className="lg:col-span-7 h-full sticky top-8">
-           <div className="bg-slate-200/50 rounded-2xl border border-slate-200/60 shadow-inner p-4 md:p-8 flex justify-center items-start overflow-hidden">
-              <div className="w-full max-h-[85vh] overflow-y-auto custom-scrollbar rounded-md">
-                  <div className="flex justify-center min-h-full p-4">
-                     {/* Preview Component */}
-                     <div id="resume-preview-id" className="bg-white shadow-2xl w-[210mm] min-h-[297mm] origin-top">
-                        {debouncedResumeData && (
-                          <ResumePreview 
-                              data={debouncedResumeData} 
-                              template={debouncedResumeData.template} 
-                              accentColor={debouncedResumeData.accent_color} 
-                          />
-                        )}
-                     </div>
-                  </div>
+        <div className="lg:col-span-7 w-full h-full lg:sticky lg:top-8">
+           <div className="bg-slate-200/50 rounded-2xl border border-slate-200/60 shadow-inner p-2 sm:p-4 md:p-8 flex justify-center items-start overflow-x-auto custom-scrollbar">
+              <div className="w-full max-h-[85vh] overflow-y-auto custom-scrollbar rounded-md flex justify-center">
+                 
+                 {/* Scaled Responsive Container for A4 Dimensions */}
+                 <div className="w-full flex justify-center py-4 overflow-hidden">
+                    <div 
+                      id="resume-preview-id" 
+                      className="bg-white shadow-2xl w-[210mm] min-h-[297mm] origin-top transform scale-[0.42] xs:scale-[0.55] sm:scale-[0.7] md:scale-[0.85] lg:scale-[0.8] xl:scale-[0.95] 2xl:scale-100 transition-transform duration-200"
+                    >
+                       {debouncedResumeData && (
+                         <ResumePreview 
+                             data={debouncedResumeData} 
+                             template={debouncedResumeData.template} 
+                             accentColor={debouncedResumeData.accent_color} 
+                         />
+                       )}
+                    </div>
+                 </div>
+
               </div>
            </div>
         </div>
