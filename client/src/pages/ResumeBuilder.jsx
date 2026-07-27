@@ -54,11 +54,10 @@ const ResumeBuilder = () => {
       const isMobile = window.innerWidth < 1024;
 
       if (isMobile) {
-        // Mobile: Calculate directly based on window width so it never defaults to 0
-        const padding = 32;
-        const screenWidth = window.innerWidth - padding;
-        const scale = screenWidth / a4Width;
-        setPreviewScale(Math.max(scale, 0.35));
+        // Mobile: Calculate scale strictly based on screen width
+        const availableWidth = window.innerWidth - 32; // 16px padding on each side
+        const scale = availableWidth / a4Width;
+        setPreviewScale(Math.min(Math.max(scale, 0.3), 0.85));
         return;
       }
 
@@ -74,7 +73,6 @@ const ResumeBuilder = () => {
     };
 
     updateScale();
-    // Extra timeout trigger to handle initial dynamic layout renders on mobile devices
     const timer = setTimeout(updateScale, 100);
     window.addEventListener('resize', updateScale);
     return () => {
@@ -83,7 +81,7 @@ const ResumeBuilder = () => {
     };
   }, [resumeData]);
 
-  // 1. Load Resume
+  // Load Resume
   useEffect(() => {
     const loadResume = async () => {
       try {
@@ -102,7 +100,7 @@ const ResumeBuilder = () => {
     if (resumeId && token) loadResume();
   }, [resumeId, token]);
 
-  // 2. Debounce Effect
+  // Debounce Effect
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedResumeData(resumeData);
@@ -110,7 +108,7 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // 3. Safe Update Handler
+  // Safe Update Handler
   const handleDataChange = (sectionKey, newData) => {
     setResumeData((prev) => ({
       ...prev,
@@ -118,7 +116,7 @@ const ResumeBuilder = () => {
     }));
   };
 
-  // 4. Save Function
+  // Save Function
   const saveResume = async () => {
     if (!resumeData) return;
     setIsSaving(true);
@@ -145,7 +143,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 5. DOWNLOAD FUNCTION
+  // Download PDF Function
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -170,7 +168,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 6. Toggle Public/Private Visibility
+  // Toggle Visibility
   const toggleVisibility = async () => {
     const newStatus = !resumeData.public;
     try {
@@ -185,7 +183,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 7. SHARE FUNCTION
+  // Share Function
   const handleShare = async () => {
     const url = `${window.location.origin}/view/${resumeId}`;
     const title = `${resumeData.personal_info?.full_name || 'My'} Resume`;
@@ -216,21 +214,25 @@ const ResumeBuilder = () => {
     );
   }
 
+  // Exact pixel height of unscaled A4
+  const a4HeightPx = 1123;
+  const scaledContainerHeightMobile = Math.round(a4HeightPx * previewScale);
+
   return (
-    // Mobile: natural min-h-screen scrolling. Desktop: fixed h-screen viewport
+    // Mobile: min-h-screen natural scroll. Desktop: fixed h-screen 50/50 view
     <div className="min-h-screen lg:h-screen w-full lg:overflow-hidden bg-slate-50 flex flex-col p-4 lg:p-3">
       
-      {/* Top Bar Link */}
+      {/* Top Header */}
       <div className="shrink-0 mb-4 lg:mb-1 flex justify-between items-center">
         <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-sm lg:text-xs font-medium transition-colors">
           <ArrowLeftIcon size={16} /> Back to Dashboard
         </Link>
       </div>
 
-      {/* Main Grid: Mobile stacks vertically, Desktop displays 50/50 side-by-side */}
+      {/* Main Container */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-3 min-h-0 lg:overflow-hidden">
         
-        {/* === LEFT BOX: EDITOR === */}
+        {/* === LEFT SIDE: EDITOR === */}
         <div className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 flex flex-col shadow-sm lg:shadow-xs lg:h-full lg:min-h-0 lg:overflow-hidden">
           
           {/* Controls Header */}
@@ -247,7 +249,7 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content: Original Spacing on Mobile, Ultra-Compact on Desktop */}
+          {/* Form Content: Standard spacing on mobile, ultra-compact on desktop */}
           <div className="p-4 lg:p-2 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 text-sm lg:text-xs
                           lg:[&_label]:mb-0.5 lg:[&_label]:text-[11px] lg:[&_label]:font-semibold lg:[&_label]:text-slate-600 
                           lg:[&_input]:py-1 lg:[&_input]:px-2.5 lg:[&_input]:text-xs lg:[&_input]:h-8 lg:[&_input]:mb-2 
@@ -261,7 +263,7 @@ const ResumeBuilder = () => {
              {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          {/* Action Footer */}
+          {/* Footer */}
           <div className="p-4 lg:p-2 border-t border-slate-100 space-y-2 lg:space-y-1 shrink-0 bg-white rounded-b-2xl lg:rounded-b-xl">
             <button onClick={saveResume} disabled={isSaving} className="w-full py-3 lg:py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-xl lg:rounded-md font-bold text-sm lg:text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
                 {isSaving ? <Loader2 className="animate-spin" size={16} /> : "Save Changes"}
@@ -289,10 +291,13 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT BOX: PREVIEW === */}
+        {/* === RIGHT SIDE: PREVIEW === */}
         <div 
           ref={previewBoxRef}
-          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-start lg:items-center min-h-[500px] lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-1 mb-6 lg:mb-0"
+          style={{
+            height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : '100%'
+          }}
+          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-start lg:items-center lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-1 mb-6 lg:mb-0"
         >
           {/* Scaled Render Container */}
           <div 
@@ -300,11 +305,11 @@ const ResumeBuilder = () => {
               width: '210mm',
               height: '297mm',
               transform: `scale(${previewScale})`,
-              transformOrigin: window.innerWidth < 1024 ? 'top center' : 'center center'
+              transformOrigin: 'top center'
             }}
             className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start lg:items-center"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs overflow-hidden shadow-sm lg:shadow-none">
+            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs overflow-hidden shadow-xs border border-slate-100">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
