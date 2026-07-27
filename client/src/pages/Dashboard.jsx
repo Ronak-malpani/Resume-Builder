@@ -17,9 +17,9 @@ const Dashboard = () => {
   
   // State
   const [allResumes, setAllResumes] = useState([]);
-  const [filteredResumes, setFilteredResumes] = useState([]); // For search
+  const [filteredResumes, setFilteredResumes] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoadingData, setIsLoadingData] = useState(true); // Loading state
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Modals
   const [showCreateResume, setShowCreateResume] = useState(false);
@@ -54,7 +54,6 @@ const Dashboard = () => {
     }
   };
 
-  // Search Filter Effect
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = allResumes.filter(r => r.title.toLowerCase().includes(lowerQuery));
@@ -89,16 +88,12 @@ const Dashboard = () => {
     setIsProcessing(false);
   };
 
-  // --- UPDATED SCAN HANDLER ---
- // --- UPDATED SCAN HANDLER ---
   const handleScanRequest = async (overrideResume = null) => {
     const targetResume = overrideResume || selectedResumeForATS;
     if (!targetResume) return;
     
     setIsScanning(true);
     try {
-      // 1. Construct a COMPLETE text representation for analysis
-      // We explicitly label sections so the AI knows they exist
       const cleanResumeText = `
         [CONTACT INFO]
         Name: ${targetResume.personal_info?.full_name || ""}
@@ -124,7 +119,6 @@ const Dashboard = () => {
         ${(targetResume.education || []).map(e => `${e.degree} in ${e.field} from ${e.school} (GPA: ${e.gpa})`).join("\n")}
       `;
 
-      // 2. Call the API
       const { data } = await api.post('/api/ai/ats-scan', { 
         resumeText: cleanResumeText,
         experienceData: targetResume.experience 
@@ -138,6 +132,7 @@ const Dashboard = () => {
       setIsScanning(false); 
     }
   };
+
   const editTitle = async (event) => {
     event.preventDefault();
     try {
@@ -165,7 +160,6 @@ const Dashboard = () => {
       setAllResumes(prev => prev.map(r => r._id === savedResume._id ? savedResume : r));
       setSelectedResumeForATS(savedResume);
       toast.success("Optimizations persisted!");
-      // Optional: re-scan immediately to show improved score
       setTimeout(() => { handleScanRequest(savedResume); }, 400);
     } catch (error) { toast.error("Database sync failed."); }
   };
@@ -191,7 +185,6 @@ const Dashboard = () => {
 
   useEffect(() => { loadAllResumes(); }, []);
 
-  // --- ANIMATION VARIANTS ---
   const containerVariants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -204,18 +197,17 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#f0fdf4] font-sans text-slate-900">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-12">
-        <header className="mb-12 flex flex-col sm:flex-row justify-between items-center gap-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <header className="mb-8 sm:mb-12 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6">
           <div className="text-center sm:text-left">
-            <h1 className="text-3xl sm:text-4xl font-black text-emerald-900 tracking-tight">
-              Welcome, {user?.name.split(' ')[0]} 👋
+            <h1 className="text-2xl sm:text-4xl font-black text-emerald-900 tracking-tight">
+              Welcome, {user?.name?.split(' ')[0]} 👋
             </h1>
-            <p className="text-emerald-700 font-bold uppercase tracking-widest text-[10px] sm:text-xs mt-2 opacity-80">
+            <p className="text-emerald-700 font-bold uppercase tracking-widest text-[10px] sm:text-xs mt-1 sm:mt-2 opacity-80">
               Manage your career documents
             </p>
           </div>
           
-          {/* SEARCH BAR */}
           <div className="relative w-full sm:w-96">
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 size-5" />
             <input 
@@ -232,7 +224,7 @@ const Dashboard = () => {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-16"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-16"
         >
           <ActionCard onClick={() => setShowCreateResume(true)} icon={PlusIcon} color="bg-emerald-600" label="Create New" />
           <ActionCard onClick={() => setShowUploadResume(true)} icon={UploadCloudIcon} color="bg-emerald-500" label="Upload PDF" />
@@ -264,13 +256,14 @@ const Dashboard = () => {
                   variants={itemVariants}
                   layoutId={resume._id}
                   whileHover={{ scale: 1.02, translateY: -5 }}
-                  className="relative aspect-[3/4.5] flex flex-col p-6 rounded-[32px] border-2 bg-white shadow-sm hover:shadow-xl hover:border-emerald-300 border-emerald-50 transition-all duration-300 group"
+                  onClick={() => navigate(`/app/builder/${resume._id}`)}
+                  className="relative cursor-pointer aspect-[3/4] sm:aspect-[3/4.5] flex flex-col p-5 sm:p-6 rounded-[32px] border-2 bg-white shadow-sm hover:shadow-xl hover:border-emerald-300 border-emerald-50 transition-all duration-300 group"
                 >
                   <div className="flex-1 flex flex-col items-center justify-center">
-                    <div className="p-4 bg-emerald-50 rounded-full mb-4 group-hover:bg-emerald-100 transition-colors">
-                      <FilePenIcon className="size-10 text-emerald-600" />
+                    <div className="p-3 sm:p-4 bg-emerald-50 rounded-full mb-3 sm:mb-4 group-hover:bg-emerald-100 transition-colors">
+                      <FilePenIcon className="size-8 sm:size-10 text-emerald-600" />
                     </div>
-                    <p className="text-xl font-black text-emerald-950 uppercase tracking-tighter text-center mb-2 line-clamp-2">{resume.title}</p>
+                    <p className="text-lg sm:text-xl font-black text-emerald-950 uppercase tracking-tighter text-center mb-2 line-clamp-2">{resume.title}</p>
                     <div className="flex flex-col items-center gap-2 w-full">
                       <p className="text-xs font-black text-emerald-600 uppercase tracking-widest">{progress}% Ready</p>
                       <div className="w-24 h-2 bg-emerald-100 rounded-full overflow-hidden">
@@ -283,10 +276,33 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-auto pt-6 border-t border-emerald-50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button onClick={(e) => { e.stopPropagation(); deleteResume(resume._id); }} className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg transition-colors"><TrashIcon size={16} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); setEditResumeId(resume._id); setTitle(resume.title); setShowEditTitle(true); }} className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-lg transition-colors"><PencilIcon size={16} /></button>
-                    <button onClick={() => navigate(`/app/builder/${resume._id}`)} className="p-2 bg-emerald-600 text-white hover:bg-emerald-800 rounded-lg transition-colors"><FilePenIcon size={16} /></button>
+
+                  {/* ACTION BUTTONS (Always visible on mobile, hover-reveal on desktop) */}
+                  <div className="mt-auto pt-4 sm:pt-6 border-t border-emerald-50 flex items-center justify-center gap-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); deleteResume(resume._id); }} 
+                      className="p-2.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors"
+                      title="Delete Resume"
+                    >
+                      <TrashIcon size={18} />
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setEditResumeId(resume._id); setTitle(resume.title); setShowEditTitle(true); }} 
+                      className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl transition-colors"
+                      title="Rename Title"
+                    >
+                      <PencilIcon size={18} />
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/app/builder/${resume._id}`); }} 
+                      className="p-2.5 bg-emerald-600 text-white hover:bg-emerald-800 rounded-xl transition-colors"
+                      title="Open Builder"
+                    >
+                      <FilePenIcon size={18} />
+                    </button>
                   </div>
                 </motion.div>
               );
@@ -295,7 +311,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* MODALS (Simplified with AnimatePresence) */}
+      {/* MODALS */}
       <AnimatePresence>
         {(showATSSelector || showCreateResume || showEditTitle || showUploadResume) && (
           <ModalBackdrop onClose={() => { setShowATSSelector(false); setShowCreateResume(false); setShowEditTitle(false); setShowUploadResume(false); setTitle(''); }}>
@@ -313,7 +329,7 @@ const Dashboard = () => {
 
             {(showCreateResume || showEditTitle) && (
               <>
-                <h2 className="text-3xl font-black text-emerald-900 uppercase tracking-tighter mb-8 italic text-center">{showCreateResume ? "New Resume" : "Edit Title"}</h2>
+                <h2 className="text-2xl sm:text-3xl font-black text-emerald-900 uppercase tracking-tighter mb-6 sm:mb-8 italic text-center">{showCreateResume ? "New Resume" : "Edit Title"}</h2>
                 <form onSubmit={showCreateResume ? createResume : editTitle} className="space-y-6">
                   <input autoFocus onChange={(e) => setTitle(e.target.value)} value={title} type="text" placeholder="Resume Title..." className="w-full px-6 py-4 rounded-2xl bg-emerald-50 border-2 border-transparent focus:border-emerald-500 outline-none font-bold text-emerald-900 text-center" required />
                   <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-emerald-700 transition-all">{showCreateResume ? "Launch Builder" : "Update"}</button>
@@ -323,7 +339,7 @@ const Dashboard = () => {
 
             {showUploadResume && (
                <form onSubmit={uploadResume} className="space-y-6">
-                 <h2 className="text-3xl font-black text-emerald-900 uppercase tracking-tighter mb-6 italic text-center">PDF Import</h2>
+                 <h2 className="text-2xl sm:text-3xl font-black text-emerald-900 uppercase tracking-tighter mb-6 italic text-center">PDF Import</h2>
                  <input onChange={(e) => setTitle(e.target.value)} value={title} type="text" placeholder="Resume Title" className="w-full px-6 py-4 rounded-2xl bg-emerald-50 border-2 border-transparent focus:border-emerald-500 outline-none font-bold text-emerald-900 text-center" required />
                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-emerald-200 border-dashed rounded-2xl cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all">
                    <UploadCloudIcon className="w-10 h-10 text-emerald-400 mb-2" />
@@ -339,7 +355,7 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* --- CONDITIONAL RENDER: ATS REPORT OVERLAY --- */}
+      {/* ATS REPORT OVERLAY */}
       {selectedResumeForATS && (
         <ATSScoreReport 
           selectedResume={selectedResumeForATS}
@@ -356,11 +372,10 @@ const Dashboard = () => {
   );
 };
 
-// Sub-components for cleaner code
 const ActionCard = ({ onClick, icon: Icon, color, label }) => (
-  <button onClick={onClick} className="group bg-white h-40 sm:h-56 flex flex-col items-center justify-center rounded-[32px] border-2 border-emerald-50 hover:border-emerald-400 hover:shadow-xl transition-all duration-300">
-    <Icon className={`size-10 sm:size-12 p-3 ${color} text-white rounded-2xl group-hover:scale-110 transition-transform`} />
-    <p className="text-lg sm:text-xl font-black text-emerald-900 mt-4 uppercase tracking-tight">{label}</p>
+  <button onClick={onClick} className="group bg-white h-32 sm:h-56 flex flex-col items-center justify-center rounded-[28px] sm:rounded-[32px] border-2 border-emerald-50 hover:border-emerald-400 hover:shadow-xl transition-all duration-300">
+    <Icon className={`size-10 sm:size-12 p-2.5 sm:p-3 ${color} text-white rounded-2xl group-hover:scale-110 transition-transform`} />
+    <p className="text-base sm:text-xl font-black text-emerald-900 mt-3 sm:mt-4 uppercase tracking-tight">{label}</p>
   </button>
 );
 
@@ -372,10 +387,10 @@ const ModalBackdrop = ({ children, onClose }) => (
   >
     <motion.div 
       initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-      className="bg-white rounded-[40px] w-full max-w-md p-8 relative shadow-2xl border-4 border-emerald-50" 
+      className="bg-white rounded-[32px] sm:rounded-[40px] w-full max-w-md p-6 sm:p-8 relative shadow-2xl border-4 border-emerald-50" 
       onClick={e => e.stopPropagation()}
     >
-      <XIcon className="absolute top-6 right-6 cursor-pointer text-emerald-300 hover:text-emerald-600 transition-colors" size={24} onClick={onClose} />
+      <XIcon className="absolute top-5 right-5 sm:top-6 sm:right-6 cursor-pointer text-emerald-300 hover:text-emerald-600 transition-colors" size={24} onClick={onClose} />
       {children}
     </motion.div>
   </motion.div>
