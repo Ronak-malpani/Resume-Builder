@@ -30,9 +30,9 @@ const ResumeBuilder = () => {
   const [debouncedResumeData, setDebouncedResumeData] = useState(null);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [scale, setScale] = useState(0.7);
+  const [previewScale, setPreviewScale] = useState(0.5);
 
-  const rightPaneRef = useRef(null);
+  const previewBoxRef = useRef(null);
 
   // Define Sections
   const sections = useMemo(() => [
@@ -46,29 +46,27 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Dynamic Scale Calculation strictly focused on Fitting Vertical Height
+  // Precise Auto-Fit Scaling for Right Box
   useEffect(() => {
-    const calculateScale = () => {
-      if (!rightPaneRef.current) return;
-      const paneHeight = rightPaneRef.current.clientHeight;
-      const paneWidth = rightPaneRef.current.clientWidth;
+    const updateScale = () => {
+      if (!previewBoxRef.current) return;
+      const { clientWidth, clientHeight } = previewBoxRef.current;
 
-      // A4 dimensions in px at standard 96 DPI
+      // Standard A4 dimensions in px (approx 96 DPI)
       const a4Width = 794; 
       const a4Height = 1123;
 
-      // Subtract small padding margin
-      const scaleH = (paneHeight - 20) / a4Height;
-      const scaleW = (paneWidth - 20) / a4Width;
+      // Calculate scale to fit inside both width AND height with margins
+      const scaleX = (clientWidth - 24) / a4Width;
+      const scaleY = (clientHeight - 24) / a4Height;
 
-      // Fit preview inside available pane bounds
-      const fitScale = Math.min(scaleH, scaleW);
-      setScale(Math.max(fitScale, 0.35));
+      const fitScale = Math.min(scaleX, scaleY);
+      setPreviewScale(Math.max(fitScale, 0.3));
     };
 
-    calculateScale();
-    window.addEventListener('resize', calculateScale);
-    return () => window.removeEventListener('resize', calculateScale);
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
   }, [resumeData]);
 
   // 1. Load Resume
@@ -98,7 +96,7 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // 3. Update Handler
+  // 3. Safe Update Handler
   const handleDataChange = (sectionKey, newData) => {
     setResumeData((prev) => ({
       ...prev,
@@ -133,7 +131,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 5. Download Function
+  // 5. DOWNLOAD FUNCTION
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -158,7 +156,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 6. Toggle Visibility
+  // 6. Toggle Public/Private Visibility
   const toggleVisibility = async () => {
     const newStatus = !resumeData.public;
     try {
@@ -173,7 +171,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 7. Share Function
+  // 7. SHARE FUNCTION
   const handleShare = async () => {
     const url = `${window.location.origin}/view/${resumeId}`;
     const title = `${resumeData.personal_info?.full_name || 'My'} Resume`;
@@ -205,20 +203,20 @@ const ResumeBuilder = () => {
   }
 
   return (
-    <div className="h-screen max-h-screen bg-slate-50 w-full px-4 md:px-6 py-3 flex flex-col overflow-hidden">
+    <div className="h-screen w-screen overflow-hidden bg-slate-50 flex flex-col p-3 md:p-4">
       
-      {/* Top Header Link */}
+      {/* Top Back Link */}
       <div className="shrink-0 mb-2">
-        <Link to="/app" className="inline-flex items-center gap-2 text-slate-500 hover:text-green-600 font-medium text-sm transition-colors">
+        <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-sm font-medium transition-colors">
           <ArrowLeftIcon size={16} /> Back to Dashboard
         </Link>
       </div>
 
-      {/* Screen Layout Wrapper */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(100vh-60px)] min-h-0 items-stretch">
+      {/* Main Container Dashboard */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
         
-        {/* === LEFT SIDE: EDITOR === */}
-        <div className="lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0 overflow-hidden">
+        {/* === LEFT BOX: EDITOR === */}
+        <div className="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0 overflow-hidden">
           
           {/* Header Controls */}
           <div className="p-3 sm:p-4 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
@@ -244,49 +242,50 @@ const ResumeBuilder = () => {
              {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          {/* Action Buttons Footer */}
+          {/* Action Footer */}
           <div className="p-3 sm:p-4 border-t border-slate-100 space-y-2 shrink-0 bg-white">
-            <button onClick={saveResume} disabled={isSaving} className="w-full py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-lg font-bold text-sm transition-all flex justify-center items-center gap-2 shadow-sm">
+            <button onClick={saveResume} disabled={isSaving} className="w-full py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-xl font-bold text-sm transition-all flex justify-center items-center gap-2 shadow-sm">
                 {isSaving ? <Loader2 className="animate-spin" size={18} /> : "Save Changes"}
             </button>
 
             <div className="grid grid-cols-2 gap-2">
               <button 
                 onClick={toggleVisibility} 
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
               >
                   {resumeData.public ? <EyeIcon size={16}/> : <EyeOffIcon size={16}/>}
                   {resumeData.public ? "Public" : "Private"}
               </button>
 
-              <button onClick={downloadResume} className="flex items-center justify-center gap-1.5 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition-all">
+              <button onClick={downloadResume} className="flex items-center justify-center gap-1.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-all">
                   <DownloadIcon size={16}/> Download PDF
               </button>
             </div>
 
             {resumeData.public && (
-              <button onClick={handleShare} className="w-full py-2 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5 hover:bg-blue-100 transition-all">
+              <button onClick={handleShare} className="w-full py-2 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold flex justify-center items-center gap-1.5 hover:bg-blue-100 transition-all">
                 <Share2Icon size={16} /> Share Resume Link
               </button>
             )}
           </div>
         </div>
 
-        {/* === RIGHT SIDE: PREVIEW === */}
+        {/* === RIGHT BOX: PREVIEW === */}
         <div 
-          ref={rightPaneRef}
-          className="lg:col-span-7 h-full w-full flex justify-center items-center overflow-hidden relative"
+          ref={previewBoxRef}
+          className="lg:col-span-7 bg-slate-200/50 rounded-2xl border border-slate-200/80 shadow-inner flex justify-center items-center h-full min-h-0 overflow-hidden relative p-2"
         >
+          {/* Scaled Render Container */}
           <div 
             style={{
               width: '210mm',
               height: '297mm',
-              transform: `scale(${scale})`,
+              transform: `scale(${previewScale})`,
               transformOrigin: 'center center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white shadow-xl rounded-sm overflow-hidden">
+            <div id="resume-preview-id" className="w-full h-full bg-white shadow-2xl rounded-sm overflow-hidden">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
