@@ -57,8 +57,8 @@ const ResumeBuilder = () => {
       const a4Height = 1123;
 
       // Calculate scale to fit inside both width AND height with margins
-      const scaleX = (clientWidth - 24) / a4Width;
-      const scaleY = (clientHeight - 24) / a4Height;
+      const scaleX = (clientWidth - 32) / a4Width;
+      const scaleY = (clientHeight - 32) / a4Height;
 
       const fitScale = Math.min(scaleX, scaleY);
       setPreviewScale(Math.max(fitScale, 0.3));
@@ -212,11 +212,11 @@ const ResumeBuilder = () => {
         </Link>
       </div>
 
-      {/* Main Container Dashboard */}
+      {/* Main Container Dashboard - EQUAL 50/50 SPLIT */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
         
-        {/* === LEFT BOX: EDITOR === */}
-        <div className="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0 overflow-hidden">
+        {/* === LEFT BOX: EDITOR (6 Columns = 50%) === */}
+        <div className="lg:col-span-6 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0 overflow-hidden">
           
           {/* Header Controls */}
           <div className="p-3 sm:p-4 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
@@ -270,10 +270,10 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT BOX: PREVIEW === */}
+        {/* === RIGHT BOX: PREVIEW (6 Columns = 50%) === */}
         <div 
           ref={previewBoxRef}
-          className="lg:col-span-7 bg-slate-200/50 rounded-2xl border border-slate-200/80 shadow-inner flex justify-center items-center h-full min-h-0 overflow-hidden relative p-2"
+          className="lg:col-span-6 bg-slate-200/50 rounded-2xl border border-slate-200/80 shadow-inner flex justify-center items-center h-full min-h-0 overflow-hidden relative p-3"
         >
           {/* Scaled Render Container */}
           <div 
