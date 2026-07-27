@@ -46,22 +46,24 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Precise Auto-Fit Scaling for Right Box
+  // Dynamic Auto-Fit Scaling for Both Mobile and Desktop
   useEffect(() => {
     const updateScale = () => {
       if (!previewBoxRef.current) return;
       const { clientWidth, clientHeight } = previewBoxRef.current;
 
-      // Standard A4 dimensions in px (approx 96 DPI)
+      // Standard A4 dimensions in px at standard 96 DPI
       const a4Width = 794; 
       const a4Height = 1123;
 
-      // Calculate scale to fit inside both width AND height with margins
-      const scaleX = (clientWidth - 32) / a4Width;
-      const scaleY = (clientHeight - 32) / a4Height;
+      if (clientWidth === 0 || clientHeight === 0) return;
+
+      // Calculate exact scaling factor to fit within container bounds without scrolling
+      const scaleX = (clientWidth - 16) / a4Width;
+      const scaleY = (clientHeight - 16) / a4Height;
 
       const fitScale = Math.min(scaleX, scaleY);
-      setPreviewScale(Math.max(fitScale, 0.3));
+      setPreviewScale(Math.max(fitScale, 0.2));
     };
 
     updateScale();
@@ -96,7 +98,7 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // 3. Safe Update Handler
+  // 3. Update Handler
   const handleDataChange = (sectionKey, newData) => {
     setResumeData((prev) => ({
       ...prev,
@@ -131,7 +133,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 5. DOWNLOAD FUNCTION
+  // 5. Download Function
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -156,7 +158,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 6. Toggle Public/Private Visibility
+  // 6. Toggle Visibility
   const toggleVisibility = async () => {
     const newStatus = !resumeData.public;
     try {
@@ -171,7 +173,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 7. SHARE FUNCTION
+  // 7. Share Function
   const handleShare = async () => {
     const url = `${window.location.origin}/view/${resumeId}`;
     const title = `${resumeData.personal_info?.full_name || 'My'} Resume`;
@@ -203,37 +205,37 @@ const ResumeBuilder = () => {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-50 flex flex-col p-3 md:p-4">
+    <div className="h-screen w-screen overflow-hidden bg-slate-50 flex flex-col p-2 md:p-3">
       
-      {/* Top Back Link */}
-      <div className="shrink-0 mb-2">
-        <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-sm font-medium transition-colors">
-          <ArrowLeftIcon size={16} /> Back to Dashboard
+      {/* Navigation Link */}
+      <div className="shrink-0 mb-1">
+        <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-xs md:text-sm font-medium transition-colors">
+          <ArrowLeftIcon size={14} /> Back to Dashboard
         </Link>
       </div>
 
-      {/* Main Container Dashboard - EQUAL 50/50 SPLIT */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
+      {/* Main Container - Equal Split Dashboard */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 min-w-0 overflow-hidden">
         
-        {/* === LEFT BOX: EDITOR (6 Columns = 50%) === */}
-        <div className="lg:col-span-6 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0 overflow-hidden">
+        {/* === LEFT BOX: EDITOR === */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
           
           {/* Header Controls */}
-          <div className="p-3 sm:p-4 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
+          <div className="p-2 sm:p-3 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
             <div className="flex gap-2">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
             </div>
             
             <div className="flex items-center gap-1">
-                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={22} strokeWidth={2.5} /></button>
+                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={20} strokeWidth={2.5} /></button>
                 <span className="text-xs font-black text-slate-400 w-8 text-center select-none">{activeSectionIndex + 1}/{sections.length}</span>
-                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronRight size={22} strokeWidth={2.5} /></button>
+                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronRight size={20} strokeWidth={2.5} /></button>
             </div>
           </div>
 
-          {/* Form Scroll Area */}
-          <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
+          {/* Form Area - Zero Scroll Container */}
+          <div className="p-2 sm:p-3 flex-1 overflow-hidden flex flex-col min-h-0 justify-center">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -242,38 +244,38 @@ const ResumeBuilder = () => {
              {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          {/* Action Footer */}
-          <div className="p-3 sm:p-4 border-t border-slate-100 space-y-2 shrink-0 bg-white">
-            <button onClick={saveResume} disabled={isSaving} className="w-full py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-xl font-bold text-sm transition-all flex justify-center items-center gap-2 shadow-sm">
-                {isSaving ? <Loader2 className="animate-spin" size={18} /> : "Save Changes"}
+          {/* Action Buttons Footer */}
+          <div className="p-2 sm:p-3 border-t border-slate-100 space-y-1.5 shrink-0 bg-white">
+            <button onClick={saveResume} disabled={isSaving} className="w-full py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg font-bold text-xs md:text-sm transition-all flex justify-center items-center gap-2 shadow-sm">
+                {isSaving ? <Loader2 className="animate-spin" size={16} /> : "Save Changes"}
             </button>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               <button 
                 onClick={toggleVisibility} 
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+                className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
               >
-                  {resumeData.public ? <EyeIcon size={16}/> : <EyeOffIcon size={16}/>}
+                  {resumeData.public ? <EyeIcon size={14}/> : <EyeOffIcon size={14}/>}
                   {resumeData.public ? "Public" : "Private"}
               </button>
 
-              <button onClick={downloadResume} className="flex items-center justify-center gap-1.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-all">
-                  <DownloadIcon size={16}/> Download PDF
+              <button onClick={downloadResume} className="flex items-center justify-center gap-1 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition-all">
+                  <DownloadIcon size={14}/> Download PDF
               </button>
             </div>
 
             {resumeData.public && (
-              <button onClick={handleShare} className="w-full py-2 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold flex justify-center items-center gap-1.5 hover:bg-blue-100 transition-all">
-                <Share2Icon size={16} /> Share Resume Link
+              <button onClick={handleShare} className="w-full py-1.5 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex justify-center items-center gap-1 hover:bg-blue-100 transition-all">
+                <Share2Icon size={14} /> Share Resume Link
               </button>
             )}
           </div>
         </div>
 
-        {/* === RIGHT BOX: PREVIEW (6 Columns = 50%) === */}
+        {/* === RIGHT BOX: PREVIEW === */}
         <div 
           ref={previewBoxRef}
-          className="lg:col-span-6 bg-slate-200/50 rounded-2xl border border-slate-200/80 shadow-inner flex justify-center items-center h-full min-h-0 overflow-hidden relative p-3"
+          className="bg-white rounded-xl shadow-sm border border-slate-200 flex justify-center items-center h-full min-h-0 min-w-0 overflow-hidden relative p-1 md:p-2"
         >
           {/* Scaled Render Container */}
           <div 
@@ -285,7 +287,7 @@ const ResumeBuilder = () => {
             }}
             className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white shadow-2xl rounded-sm overflow-hidden">
+            <div id="resume-preview-id" className="w-full h-full bg-white shadow-md rounded-sm overflow-hidden">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
