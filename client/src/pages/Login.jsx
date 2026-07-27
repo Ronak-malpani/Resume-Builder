@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Lock, Mail, User2Icon, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Lock, Mail, User2Icon, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react'
 import api from '../configs/api'
 import { useDispatch } from 'react-redux'
 import { login } from '../app/features/authSlice'
@@ -61,10 +61,19 @@ const Login = () => {
     }
 
     return (
-        <div className='flex items-center justify-center min-h-screen bg-gray-50 px-4 sm:px-6 py-8'>
+        <div className='flex items-center justify-center min-h-screen bg-gray-50 px-4 sm:px-6 py-8 relative'>
+            {/* Back to Home Button */}
+            <Link 
+                to="/" 
+                className="absolute top-6 left-6 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+            >
+                <ArrowLeft size={18} />
+                <span>Back to Home</span>
+            </Link>
+
             <form 
                 onSubmit={handleSubmit} 
-                className="w-full max-w-sm sm:max-w-md text-center border border-gray-300/60 rounded-2xl p-6 sm:p-8 bg-white shadow-sm transition-all"
+                className="w-full max-w-sm sm:max-w-md text-center border border-gray-300/60 rounded-2xl p-6 sm:p-8 bg-white shadow-sm transition-all mt-12 sm:mt-0"
             >
                 <h1 className="text-gray-900 text-2xl sm:text-3xl mt-4 font-medium capitalize">
                     {state === "login" ? "Login" : "Sign up"}
