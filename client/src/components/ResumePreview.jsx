@@ -7,12 +7,11 @@ import ProfessionalTemplate from '../assets/templates/ProfessionalTemplate';
 
 const ResumePreview = ({ data, template, accentColor }) => {
   
-  // 1. Data Sanitization (Kept from your code - ensures data is clean)
+  // 1. Data Sanitization
   const sanitizedData = useMemo(() => ({
     ...data,
     personal_info: {
       ...data.personal_info,
-      // Handle edge case where linkedin might have "linked:" prefix
       linkedin: data.personal_info?.linkedin?.replace("linked:", "")
     },
     experience: Array.isArray(data.experience)
@@ -45,8 +44,8 @@ const ResumePreview = ({ data, template, accentColor }) => {
   };
 
   return (
-    // Clean wrapper. Removed progress bar so it doesn't show in PDF.
-    <div className="w-full h-full bg-white text-left">
+    // Changed h-full to min-h-full so it doesn't leave trailing empty space
+    <div className="w-full min-h-full bg-white text-left box-border p-6 shadow-xs">
         {renderTemplate()}
     </div>
   );
