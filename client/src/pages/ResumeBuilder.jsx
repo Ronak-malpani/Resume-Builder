@@ -32,7 +32,7 @@ const ResumeBuilder = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.45);
 
-  const previewBoxRef = useRef(null);
+  const desktopPreviewRef = useRef(null);
 
   // Define Sections
   const sections = useMemo(() => [
@@ -46,42 +46,36 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Calculate scaling for desktop viewports & mobile fallbacks
+  // Calculate dynamic scale for Desktop viewports
   useEffect(() => {
-    const updateScale = () => {
-      const a4Width = 794; 
-      const a4Height = 1123;
-      const isMobile = window.innerWidth < 1024;
+    const updateDesktopScale = () => {
+      if (window.innerWidth < 1024) return; // Skip calculation for mobile
 
-      if (isMobile) {
-        // Mobile: Calculate scale strictly based on screen width
-        const availableWidth = window.innerWidth - 32; // 16px padding on each side
-        const scale = availableWidth / a4Width;
-        setPreviewScale(Math.min(Math.max(scale, 0.3), 0.85));
-        return;
-      }
-
-      // Desktop: Height-fitted scaling inside container
-      if (!previewBoxRef.current) return;
-      const { clientWidth, clientHeight } = previewBoxRef.current;
+      if (!desktopPreviewRef.current) return;
+      const { clientWidth, clientHeight } = desktopPreviewRef.current;
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const scaleX = (clientWidth - 16) / a4Width;
-      const scaleY = (clientHeight - 16) / a4Height;
+      const a4Width = 794; 
+      const a4Height = 1123;
+      const padding = 32;
+
+      const scaleX = (clientWidth - padding) / a4Width;
+      const scaleY = (clientHeight - padding) / a4Height;
       const fitScale = Math.min(scaleX, scaleY);
-      setPreviewScale(Math.max(fitScale, 0.35));
+      
+      setPreviewScale(Math.max(fitScale, 0.25));
     };
 
-    updateScale();
-    const timer = setTimeout(updateScale, 100);
-    window.addEventListener('resize', updateScale);
+    updateDesktopScale();
+    const timer = setTimeout(updateDesktopScale, 100);
+    window.addEventListener('resize', updateDesktopScale);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', updateScale);
+      window.removeEventListener('resize', updateDesktopScale);
     };
   }, [resumeData]);
 
-  // Load Resume
+  // Load Resume Data
   useEffect(() => {
     const loadResume = async () => {
       try {
@@ -108,7 +102,7 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // Safe Update Handler
+  // Update Section Data
   const handleDataChange = (sectionKey, newData) => {
     setResumeData((prev) => ({
       ...prev,
@@ -214,12 +208,7 @@ const ResumeBuilder = () => {
     );
   }
 
-  // Exact pixel height of unscaled A4
-  const a4HeightPx = 1123;
-  const scaledContainerHeightMobile = Math.round(a4HeightPx * previewScale);
-
   return (
-    // Mobile: min-h-screen natural scroll. Desktop: fixed h-screen 50/50 view
     <div className="min-h-screen lg:h-screen w-full lg:overflow-hidden bg-slate-50 flex flex-col p-4 lg:p-3">
       
       {/* Top Header */}
@@ -229,7 +218,7 @@ const ResumeBuilder = () => {
         </Link>
       </div>
 
-      {/* Main Container */}
+      {/* Main Grid */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-3 min-h-0 lg:overflow-hidden">
         
         {/* === LEFT SIDE: EDITOR === */}
@@ -249,7 +238,7 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content: Standard spacing on mobile, ultra-compact on desktop */}
+          {/* Form Content */}
           <div className="p-4 lg:p-2 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 text-sm lg:text-xs
                           lg:[&_label]:mb-0.5 lg:[&_label]:text-[11px] lg:[&_label]:font-semibold lg:[&_label]:text-slate-600 
                           lg:[&_input]:py-1 lg:[&_input]:px-2.5 lg:[&_input]:text-xs lg:[&_input]:h-8 lg:[&_input]:mb-2 
@@ -292,24 +281,37 @@ const ResumeBuilder = () => {
         </div>
 
         {/* === RIGHT SIDE: PREVIEW === */}
+        
+        {/* --- MOBILE PREVIEW CONTAINER (Shown only on small screens) --- */}
+        <div className="block lg:hidden bg-white rounded-2xl border border-slate-200 p-2 shadow-sm mb-6 overflow-x-auto">
+          <div className="w-[794px] transform origin-top-left scale-[0.42] sm:scale-[0.55]">
+            <div id="resume-preview-id-mobile" className="w-full bg-white border border-slate-100">
+               {debouncedResumeData && (
+                 <ResumePreview 
+                     data={debouncedResumeData} 
+                     template={debouncedResumeData.template} 
+                     accentColor={debouncedResumeData.accent_color} 
+                 />
+               )}
+            </div>
+          </div>
+        </div>
+
+        {/* --- DESKTOP PREVIEW CONTAINER (Shown only on large screens) --- */}
         <div 
-          ref={previewBoxRef}
-          style={{
-            height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : '100%'
-          }}
-          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-start lg:items-center lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-1 mb-6 lg:mb-0"
+          ref={desktopPreviewRef}
+          className="hidden lg:flex bg-white rounded-xl border border-slate-200 shadow-xs justify-center items-center h-full min-h-0 overflow-hidden relative p-1"
         >
-          {/* Scaled Render Container */}
           <div 
             style={{
               width: '210mm',
               height: '297mm',
               transform: `scale(${previewScale})`,
-              transformOrigin: 'top center'
+              transformOrigin: 'center center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start lg:items-center"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs overflow-hidden shadow-xs border border-slate-100">
+            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs border border-slate-100">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
