@@ -45,7 +45,7 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Precision scaling calculation for Desktop & Mobile
+  // Precision scaling calculation based on active container bounds
   useEffect(() => {
     const updateScale = () => {
       const isMobile = window.innerWidth < 1024;
@@ -61,10 +61,10 @@ const ResumeBuilder = () => {
       const { clientWidth, clientHeight } = previewBoxRef.current;
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const scaleX = (clientWidth - 20) / 794;
-      const scaleY = (clientHeight - 20) / 1123;
+      const scaleX = (clientWidth - 24) / 794;
+      const scaleY = (clientHeight - 24) / 1123;
       const fitScale = Math.min(scaleX, scaleY);
-      setPreviewScale(Math.max(fitScale, 0.25));
+      setPreviewScale(Math.max(fitScale, 0.3));
     };
 
     updateScale();
@@ -201,7 +201,6 @@ const ResumeBuilder = () => {
   const scaledContainerHeightMobile = Math.round(a4HeightPx * previewScale);
 
   return (
-    /* Reduced desktop container height to max 720px / calc(100vh - 140px) to leave space for top navbar */
     <div className="w-full lg:max-h-[calc(100vh-140px)] lg:h-[680px] bg-slate-50 flex flex-col p-2 lg:p-2.5 overflow-y-auto lg:overflow-hidden">
       
       {/* Navigation link */}
@@ -211,7 +210,7 @@ const ResumeBuilder = () => {
         </Link>
       </div>
 
-      {/* Grid container */}
+      {/* Main Grid Container */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 lg:overflow-hidden">
         
         {/* === LEFT SIDE: COMPACT FORM EDITOR === */}
@@ -231,12 +230,12 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Compact Form Content */}
-          <div className="p-2.5 lg:p-2 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 
-                          lg:[&_input]:h-6.5 lg:[&_input]:py-0 lg:[&_input]:px-2 lg:[&_input]:mb-1 lg:[&_input]:text-xs 
-                          lg:[&_label]:mb-0.5 lg:[&_label]:text-[10px] lg:[&_label]:font-semibold 
-                          lg:[&_textarea]:py-0.5 lg:[&_textarea]:px-2 lg:[&_textarea]:text-xs
-                          lg:[&_.space-y-4]:space-y-0.5 lg:[&_.space-y-6]:space-y-0.5 lg:[&_p]:hidden">
+          {/* Form Content Wrapper: Ultra-compact desktop input sizes fit all fields without scrolling */}
+          <div className="p-2 lg:p-1.5 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 
+                          lg:[&_input]:!h-6 lg:[&_input]:!py-0 lg:[&_input]:!px-2 lg:[&_input]:!mb-1 lg:[&_input]:!text-[11px] 
+                          lg:[&_label]:!mb-0 lg:[&_label]:!text-[9px] lg:[&_label]:!font-semibold lg:[&_label]:!text-slate-500
+                          lg:[&_textarea]:!py-0.5 lg:[&_textarea]:!px-2 lg:[&_textarea]:!text-xs
+                          lg:[&_div.space-y-4]:!space-y-0.5 lg:[&_div.space-y-6]:!space-y-0.5 lg:[&_p]:hidden">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -279,19 +278,20 @@ const ResumeBuilder = () => {
           style={{
             height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : '100%'
           }}
-          className="bg-white rounded-xl border border-slate-200 shadow-xs flex justify-center items-center lg:h-full lg:min-h-0 overflow-hidden relative p-2"
+          className="bg-white rounded-xl border border-slate-200 shadow-xs flex justify-center items-start lg:h-full lg:min-h-0 overflow-hidden relative p-2"
         >
-          {/* Scaled Render Container centered cleanly */}
+          {/* Scaled Render Container adjusts height dynamically */}
           <div 
             style={{
               width: '210mm',
-              height: '297mm',
+              minHeight: '297mm',
+              height: 'fit-content',
               transform: `scale(${previewScale})`,
-              transformOrigin: 'center center'
+              transformOrigin: 'top center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs border border-slate-100 shadow-xs overflow-hidden">
+            <div id="resume-preview-id" className="w-full bg-white rounded-xs border border-slate-100 shadow-xs overflow-hidden">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 

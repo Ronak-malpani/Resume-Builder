@@ -44,8 +44,8 @@ const ResumePreview = ({ data, template, accentColor }) => {
   };
 
   return (
-    // Changed h-full to min-h-full so it doesn't leave trailing empty space
-    <div className="w-full min-h-full bg-white text-left box-border p-6 shadow-xs">
+    // Dynamic height adjustment: fit content naturally without trailing empty canvas
+    <div className="w-full h-fit bg-white text-left box-border">
         {renderTemplate()}
     </div>
   );
