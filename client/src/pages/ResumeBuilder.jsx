@@ -55,7 +55,7 @@ const ResumeBuilder = () => {
       const { clientWidth } = previewBoxRef.current;
       if (clientWidth === 0) return;
 
-      const availableWidth = clientWidth - 20;
+      const availableWidth = clientWidth - 24;
       const scale = availableWidth / 794;
       setPreviewScale(Math.min(Math.max(scale, 0.25), 0.85));
     };
@@ -191,66 +191,64 @@ const ResumeBuilder = () => {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto lg:max-h-[calc(100vh-120px)] lg:h-[620px] bg-slate-50 flex flex-col p-2 lg:p-3 overflow-y-auto lg:overflow-hidden">
+    <div className="w-full max-w-7xl mx-auto min-h-screen bg-slate-50 flex flex-col p-3 lg:p-4">
       
-      {/* Navigation link */}
-      <div className="shrink-0 mb-1 flex justify-between items-center">
+      {/* Top Header Navigation */}
+      <div className="shrink-0 mb-2 flex justify-between items-center">
         <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-xs font-medium transition-colors">
           <ArrowLeftIcon size={14} /> Back to Dashboard
         </Link>
       </div>
 
-      {/* Main Grid Container with controlled width and smaller boxes */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 lg:overflow-hidden items-start">
+      {/* Main Layout Grid */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         
-        {/* === LEFT SIDE: COMPACT FORM EDITOR === */}
-        <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs lg:h-full lg:min-h-0 overflow-hidden">
+        {/* === LEFT SIDE: FORM EDITOR BOX === */}
+        <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden h-fit">
           
-          {/* Header Controls with Density / Font Size buttons */}
-          <div className="p-1.5 border-b border-slate-100 flex justify-between items-center gap-1.5 shrink-0">
-            <div className="flex items-center gap-1">
+          {/* Header Toolbar */}
+          <div className="p-2 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0 bg-slate-50/50">
+            <div className="flex items-center gap-1.5">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
                
-               {/* FONT SIZE / DENSITY CONTROLLER */}
-               <div className="flex items-center bg-slate-100 p-0.5 rounded border border-slate-200 text-[10px] ml-1">
-                  <Type size={12} className="text-slate-400 mx-0.5" />
+               {/* Size / Density Adjuster */}
+               <div className="flex items-center bg-white p-0.5 rounded border border-slate-200 text-[11px] ml-1 shadow-2xs">
+                  <Type size={13} className="text-slate-400 mx-1" />
                   <button 
                     onClick={() => setFontScale('small')} 
-                    className={`px-1 py-0.5 rounded font-bold transition-colors ${fontScale === 'small' ? 'bg-white shadow-xs text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-0.5 rounded font-bold transition-all ${fontScale === 'small' ? 'bg-slate-100 text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
                   >
-                    S
+                    Small
                   </button>
                   <button 
                     onClick={() => setFontScale('normal')} 
-                    className={`px-1 py-0.5 rounded font-bold transition-colors ${fontScale === 'normal' ? 'bg-white shadow-xs text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-0.5 rounded font-bold transition-all ${fontScale === 'normal' ? 'bg-slate-100 text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
                   >
-                    M
+                    Normal
                   </button>
                   <button 
                     onClick={() => setFontScale('large')} 
-                    className={`px-1 py-0.5 rounded font-bold transition-colors ${fontScale === 'large' ? 'bg-white shadow-xs text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-0.5 rounded font-bold transition-all ${fontScale === 'large' ? 'bg-slate-100 text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
                   >
-                    L
+                    Large
                   </button>
                </div>
             </div>
             
-            {/* Section Pagination */}
-            <div className="flex items-center gap-0.5">
-                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={16} strokeWidth={2.5} /></button>
-                <span className="text-[10px] font-bold text-slate-400 w-7 text-center select-none">{activeSectionIndex + 1}/{sections.length}</span>
-                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronRight size={16} strokeWidth={2.5} /></button>
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-1">
+                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={18} strokeWidth={2.5} /></button>
+                <span className="text-xs font-bold text-slate-400 w-8 text-center select-none">{activeSectionIndex + 1}/{sections.length}</span>
+                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronRight size={18} strokeWidth={2.5} /></button>
             </div>
           </div>
 
-          {/* Form Content - Compact spacing */}
-          <div className="p-2 lg:p-1 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 
-                          lg:[&_input]:!h-5 lg:[&_input]:!py-0 lg:[&_input]:!px-2 lg:[&_input]:!mb-0 lg:[&_input]:!text-[10px] 
-                          lg:[&_label]:!mb-0 lg:[&_label]:!text-[9px] lg:[&_label]:!font-semibold lg:[&_label]:!text-slate-500
-                          lg:[&_textarea]:!py-0.5 lg:[&_textarea]:!px-2 lg:[&_textarea]:!text-[11px]
-                          lg:[&_div]:!gap-0 lg:[&_div]:!space-y-0.5 lg:[&_div]:!my-0
-                          lg:[&_.space-y-4]:!space-y-0.5 lg:[&_.space-y-6]:!space-y-0.5 lg:[&_p]:hidden">
+          {/* Form Content (Clean Natural Spacing) */}
+          <div className="p-3.5 space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto custom-scrollbar
+                          [&_input]:!h-9 [&_input]:!py-1.5 [&_input]:!px-3 [&_input]:!text-xs [&_input]:!rounded-lg
+                          [&_label]:!mb-1 [&_label]:!text-xs [&_label]:!font-semibold [&_label]:!text-slate-600
+                          [&_textarea]:!p-2.5 [&_textarea]:!text-xs [&_textarea]:!rounded-lg">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -259,38 +257,38 @@ const ResumeBuilder = () => {
              {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          {/* Footer Actions */}
-          <div className="p-1 border-t border-slate-100 space-y-1 shrink-0 bg-white">
-            <button onClick={saveResume} disabled={isSaving} className="w-full py-1 bg-green-600 text-white hover:bg-green-700 rounded font-bold text-[11px] transition-all flex justify-center items-center gap-1 shadow-xs">
-                {isSaving ? <Loader2 className="animate-spin" size={13} /> : "Save Changes"}
+          {/* Footer Actions (Sits right beneath inputs) */}
+          <div className="p-2 border-t border-slate-100 space-y-1.5 bg-slate-50/50 shrink-0">
+            <button onClick={saveResume} disabled={isSaving} className="w-full py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg font-bold text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
+                {isSaving ? <Loader2 className="animate-spin" size={14} /> : "Save Changes"}
             </button>
 
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-2 gap-1.5">
               <button 
                 onClick={toggleVisibility} 
-                className={`flex items-center justify-center gap-1 py-0.5 rounded text-[10px] font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
               >
-                  {resumeData.public ? <EyeIcon size={12}/> : <EyeOffIcon size={12}/>}
+                  {resumeData.public ? <EyeIcon size={14}/> : <EyeOffIcon size={14}/>}
                   {resumeData.public ? "Public" : "Private"}
               </button>
 
-              <button onClick={downloadResume} className="flex items-center justify-center gap-1 py-0.5 bg-slate-800 text-white rounded text-[10px] font-bold hover:bg-slate-900 transition-all">
-                  <DownloadIcon size={12}/> Download PDF
+              <button onClick={downloadResume} className="flex items-center justify-center gap-1.5 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition-all">
+                  <DownloadIcon size={14}/> Download PDF
               </button>
             </div>
 
             {resumeData.public && (
-              <button onClick={handleShare} className="w-full py-0.5 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded text-[10px] font-bold flex justify-center items-center gap-1 hover:bg-blue-100 transition-all">
-                <Share2Icon size={12} /> Share Resume Link
+              <button onClick={handleShare} className="w-full py-1.5 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5 hover:bg-blue-100 transition-all">
+                <Share2Icon size={14} /> Share Resume Link
               </button>
             )}
           </div>
         </div>
 
-        {/* === RIGHT SIDE: PREVIEW CONTAINER === */}
+        {/* === RIGHT SIDE: PREVIEW BOX === */}
         <div 
           ref={previewBoxRef}
-          className="w-full flex justify-center items-start lg:max-h-full overflow-hidden"
+          className="w-full flex justify-center items-start sticky top-4 overflow-hidden"
         >
           <div 
             style={{
@@ -303,7 +301,7 @@ const ResumeBuilder = () => {
           >
             <div 
               id="resume-preview-id" 
-              className="w-full h-auto bg-white rounded-md border border-slate-200 shadow-sm overflow-hidden"
+              className="w-full h-auto bg-white rounded-md border border-slate-200 shadow-md overflow-hidden"
             >
                {debouncedResumeData && (
                  <ResumePreview 
