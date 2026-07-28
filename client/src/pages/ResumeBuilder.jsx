@@ -46,7 +46,7 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Calculate scaling accurately for both mobile and desktop
+  // Calculate scaling for mobile and desktop viewports
   useEffect(() => {
     const updateScale = () => {
       const a4Width = 794; 
@@ -54,22 +54,24 @@ const ResumeBuilder = () => {
       const isMobile = window.innerWidth < 1024;
 
       if (isMobile) {
-        // Original mobile scale logic
+        // Original mobile scale logic unchanged
         const availableWidth = window.innerWidth - 32;
         const scale = availableWidth / a4Width;
         setPreviewScale(Math.min(Math.max(scale, 0.3), 0.85));
         return;
       }
 
-      // Desktop: Height-fitted calculation without clipping top or bottom
+      // Desktop: Height-fitted with additional padding to keep layout compact
       if (!previewBoxRef.current) return;
       const { clientWidth, clientHeight } = previewBoxRef.current;
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const scaleX = (clientWidth - 32) / a4Width;
-      const scaleY = (clientHeight - 32) / a4Height;
+      const paddingX = 40;
+      const paddingY = 40; // Increased padding to reduce vertical sheet height on desktop
+      const scaleX = (clientWidth - paddingX) / a4Width;
+      const scaleY = (clientHeight - paddingY) / a4Height;
       const fitScale = Math.min(scaleX, scaleY);
-      setPreviewScale(Math.max(fitScale, 0.25));
+      setPreviewScale(Math.max(fitScale, 0.22));
     };
 
     updateScale();
@@ -218,41 +220,41 @@ const ResumeBuilder = () => {
   const scaledContainerHeightMobile = Math.round(a4HeightPx * previewScale);
 
   return (
-    <div className="min-h-screen lg:h-screen w-full lg:overflow-hidden bg-slate-50 flex flex-col p-4 lg:p-3">
+    <div className="min-h-screen lg:h-[calc(100vh-65px)] w-full lg:overflow-hidden bg-slate-50 flex flex-col p-3 lg:p-2">
       
-      {/* Top Header */}
-      <div className="shrink-0 mb-4 lg:mb-1 flex justify-between items-center">
+      {/* Top Header Link */}
+      <div className="shrink-0 mb-2 lg:mb-1 flex justify-between items-center">
         <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-sm lg:text-xs font-medium transition-colors">
-          <ArrowLeftIcon size={16} /> Back to Dashboard
+          <ArrowLeftIcon size={14} /> Back to Dashboard
         </Link>
       </div>
 
       {/* Main Container */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-3 min-h-0 lg:overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-2.5 min-h-0 lg:overflow-hidden">
         
         {/* === LEFT SIDE: EDITOR === */}
         <div className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 flex flex-col shadow-sm lg:shadow-xs lg:h-full lg:min-h-0 lg:overflow-hidden">
           
           {/* Controls Header */}
-          <div className="p-4 lg:p-2 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
+          <div className="p-3 lg:p-1.5 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
             <div className="flex gap-2 lg:gap-1.5">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
             </div>
             
             <div className="flex items-center gap-2 lg:gap-1">
-                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 lg:p-0.5 transition-colors"><ChevronLeft size={22} className="lg:w-4 lg:h-4" strokeWidth={2.5} /></button>
+                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 lg:p-0.5 transition-colors"><ChevronLeft size={20} className="lg:w-4 lg:h-4" strokeWidth={2.5} /></button>
                 <span className="text-xs lg:text-[11px] font-bold text-slate-400 w-10 text-center select-none">{activeSectionIndex + 1}/{sections.length}</span>
-                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 lg:p-0.5 transition-colors"><ChevronRight size={22} className="lg:w-4 lg:h-4" strokeWidth={2.5} /></button>
+                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 lg:p-0.5 transition-colors"><ChevronRight size={20} className="lg:w-4 lg:h-4" strokeWidth={2.5} /></button>
             </div>
           </div>
 
-          {/* Form Content */}
+          {/* Form Content: Compacted input boxes and label vertical margins for Desktop */}
           <div className="p-4 lg:p-2 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 text-sm lg:text-xs
-                          lg:[&_label]:mb-0.5 lg:[&_label]:text-[11px] lg:[&_label]:font-semibold lg:[&_label]:text-slate-600 
-                          lg:[&_input]:py-1 lg:[&_input]:px-2.5 lg:[&_input]:text-xs lg:[&_input]:h-8 lg:[&_input]:mb-2 
-                          lg:[&_textarea]:py-1 lg:[&_textarea]:px-2.5 lg:[&_textarea]:text-xs 
-                          lg:[&_p]:hidden lg:[&_h2]:hidden lg:[&_.space-y-4]:space-y-1 lg:[&_.space-y-6]:space-y-1">
+                          lg:[&_label]:mb-0.5 lg:[&_label]:text-[10px] lg:[&_label]:font-semibold lg:[&_label]:text-slate-500
+                          lg:[&_input]:py-0.5 lg:[&_input]:px-2 lg:[&_input]:text-xs lg:[&_input]:h-7 lg:[&_input]:mb-1.5 
+                          lg:[&_textarea]:py-1 lg:[&_textarea]:px-2 lg:[&_textarea]:text-xs 
+                          lg:[&_p]:hidden lg:[&_h2]:hidden lg:[&_.space-y-4]:space-y-0.5 lg:[&_.space-y-6]:space-y-0.5 lg:[&_.gap-4]:gap-1">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -262,28 +264,28 @@ const ResumeBuilder = () => {
           </div>
 
           {/* Footer */}
-          <div className="p-4 lg:p-2 border-t border-slate-100 space-y-2 lg:space-y-1 shrink-0 bg-white rounded-b-2xl lg:rounded-b-xl">
-            <button onClick={saveResume} disabled={isSaving} className="w-full py-3 lg:py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-xl lg:rounded-md font-bold text-sm lg:text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
-                {isSaving ? <Loader2 className="animate-spin" size={16} /> : "Save Changes"}
+          <div className="p-3 lg:p-1.5 border-t border-slate-100 space-y-1.5 lg:space-y-1 shrink-0 bg-white rounded-b-2xl lg:rounded-b-xl">
+            <button onClick={saveResume} disabled={isSaving} className="w-full py-2.5 lg:py-1 bg-green-600 text-white hover:bg-green-700 rounded-xl lg:rounded-md font-bold text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
+                {isSaving ? <Loader2 className="animate-spin" size={14} /> : "Save Changes"}
             </button>
 
-            <div className="grid grid-cols-2 gap-2 lg:gap-1">
+            <div className="grid grid-cols-2 gap-1.5 lg:gap-1">
               <button 
                 onClick={toggleVisibility} 
-                className={`flex items-center justify-center gap-1 py-2 lg:py-1 rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+                className={`flex items-center justify-center gap-1 py-1.5 lg:py-0.5 rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
               >
-                  {resumeData.public ? <EyeIcon size={14}/> : <EyeOffIcon size={14}/>}
+                  {resumeData.public ? <EyeIcon size={13}/> : <EyeOffIcon size={13}/>}
                   {resumeData.public ? "Public" : "Private"}
               </button>
 
-              <button onClick={downloadResume} className="flex items-center justify-center gap-1 py-2 lg:py-1 bg-slate-800 text-white rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold hover:bg-slate-900 transition-all">
-                  <DownloadIcon size={14}/> Download PDF
+              <button onClick={downloadResume} className="flex items-center justify-center gap-1 py-1.5 lg:py-0.5 bg-slate-800 text-white rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold hover:bg-slate-900 transition-all">
+                  <DownloadIcon size={13}/> Download PDF
               </button>
             </div>
 
             {resumeData.public && (
-              <button onClick={handleShare} className="w-full py-2 lg:py-1 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold flex justify-center items-center gap-1 hover:bg-blue-100 transition-all">
-                <Share2Icon size={14} /> Share Resume Link
+              <button onClick={handleShare} className="w-full py-1.5 lg:py-0.5 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-xl lg:rounded-md text-xs lg:text-[11px] font-bold flex justify-center items-center gap-1 hover:bg-blue-100 transition-all">
+                <Share2Icon size={13} /> Share Resume Link
               </button>
             )}
           </div>
@@ -295,7 +297,7 @@ const ResumeBuilder = () => {
           style={{
             height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : '100%'
           }}
-          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-start lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-4 mb-6 lg:mb-0"
+          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-center lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-2 mb-6 lg:mb-0"
         >
           {/* Scaled Render Container */}
           <div 
@@ -303,11 +305,11 @@ const ResumeBuilder = () => {
               width: '210mm',
               height: '297mm',
               transform: `scale(${previewScale})`,
-              transformOrigin: 'top center'
+              transformOrigin: 'center center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs border border-slate-100">
+            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs border border-slate-100 shadow-xs">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
