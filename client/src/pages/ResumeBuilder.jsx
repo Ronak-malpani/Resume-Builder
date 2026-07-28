@@ -45,26 +45,24 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Auto Scaling Calculation
+  // Precision scaling calculation for Desktop & Mobile
   useEffect(() => {
     const updateScale = () => {
       const isMobile = window.innerWidth < 1024;
 
       if (isMobile) {
-        // Unchanged Mobile Scale
         const availableWidth = window.innerWidth - 32;
         const scale = availableWidth / 794;
         setPreviewScale(Math.min(Math.max(scale, 0.3), 0.85));
         return;
       }
 
-      // Desktop Scale calculation to keep page centered without vertical cutting
       if (!previewBoxRef.current) return;
       const { clientWidth, clientHeight } = previewBoxRef.current;
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const scaleX = (clientWidth - 32) / 794;
-      const scaleY = (clientHeight - 32) / 1123;
+      const scaleX = (clientWidth - 20) / 794;
+      const scaleY = (clientHeight - 20) / 1123;
       const fitScale = Math.min(scaleX, scaleY);
       setPreviewScale(Math.max(fitScale, 0.25));
     };
@@ -74,7 +72,6 @@ const ResumeBuilder = () => {
     return () => window.removeEventListener('resize', updateScale);
   }, [resumeData]);
 
-  // Fetch Resume Data
   useEffect(() => {
     const loadResume = async () => {
       try {
@@ -93,7 +90,6 @@ const ResumeBuilder = () => {
     if (resumeId && token) loadResume();
   }, [resumeId, token]);
 
-  // Debounce Effect
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedResumeData(resumeData);
@@ -205,11 +201,11 @@ const ResumeBuilder = () => {
   const scaledContainerHeightMobile = Math.round(a4HeightPx * previewScale);
 
   return (
-    /* Uses dynamic viewport height minus top navbar offset on desktop */
-    <div className="w-full lg:h-[calc(100vh-90px)] bg-slate-50 flex flex-col p-2 lg:p-3 overflow-y-auto lg:overflow-hidden">
+    /* Reduced desktop container height to max 720px / calc(100vh - 140px) to leave space for top navbar */
+    <div className="w-full lg:max-h-[calc(100vh-140px)] lg:h-[680px] bg-slate-50 flex flex-col p-2 lg:p-2.5 overflow-y-auto lg:overflow-hidden">
       
       {/* Navigation link */}
-      <div className="shrink-0 mb-1.5 flex justify-between items-center">
+      <div className="shrink-0 mb-1 flex justify-between items-center">
         <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-xs font-medium transition-colors">
           <ArrowLeftIcon size={14} /> Back to Dashboard
         </Link>
@@ -222,7 +218,7 @@ const ResumeBuilder = () => {
         <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs lg:h-full lg:min-h-0 overflow-hidden">
           
           {/* Header Controls */}
-          <div className="p-2 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
+          <div className="p-1.5 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
             <div className="flex gap-1.5">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
@@ -235,12 +231,12 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content: Compacted spacing targets inputs and labels directly */}
-          <div className="p-3 lg:p-2 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 
-                          lg:[&_input]:h-7 lg:[&_input]:py-0.5 lg:[&_input]:px-2 lg:[&_input]:mb-1.5 lg:[&_input]:text-xs 
+          {/* Compact Form Content */}
+          <div className="p-2.5 lg:p-2 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 
+                          lg:[&_input]:h-6.5 lg:[&_input]:py-0 lg:[&_input]:px-2 lg:[&_input]:mb-1 lg:[&_input]:text-xs 
                           lg:[&_label]:mb-0.5 lg:[&_label]:text-[10px] lg:[&_label]:font-semibold 
-                          lg:[&_textarea]:py-1 lg:[&_textarea]:px-2 lg:[&_textarea]:text-xs
-                          lg:[&_.space-y-4]:space-y-1 lg:[&_.space-y-6]:space-y-1 lg:[&_p]:hidden">
+                          lg:[&_textarea]:py-0.5 lg:[&_textarea]:px-2 lg:[&_textarea]:text-xs
+                          lg:[&_.space-y-4]:space-y-0.5 lg:[&_.space-y-6]:space-y-0.5 lg:[&_p]:hidden">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -250,7 +246,7 @@ const ResumeBuilder = () => {
           </div>
 
           {/* Footer Actions */}
-          <div className="p-2 border-t border-slate-100 space-y-1 shrink-0 bg-white">
+          <div className="p-1.5 border-t border-slate-100 space-y-1 shrink-0 bg-white">
             <button onClick={saveResume} disabled={isSaving} className="w-full py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-md font-bold text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
                 {isSaving ? <Loader2 className="animate-spin" size={14} /> : "Save Changes"}
             </button>
@@ -295,7 +291,7 @@ const ResumeBuilder = () => {
             }}
             className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs border border-slate-100 shadow-sm overflow-hidden">
+            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs border border-slate-100 shadow-xs overflow-hidden">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
