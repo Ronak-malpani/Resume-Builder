@@ -32,7 +32,7 @@ const ResumeBuilder = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.42);
   
-  // Font scaling mode: 'small' | 'normal' | 'large'
+  // Font / Density scale mode: 'small' | 'normal' | 'large'
   const [fontScale, setFontScale] = useState('normal');
 
   const previewBoxRef = useRef(null);
@@ -48,7 +48,7 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Dynamic preview scaling calculation
+  // Precision scaling calculation for right preview box
   useEffect(() => {
     const updateScale = () => {
       if (!previewBoxRef.current) return;
@@ -191,7 +191,7 @@ const ResumeBuilder = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto min-h-screen bg-slate-50 flex flex-col p-3 lg:p-4">
+    <div className="w-full min-h-screen bg-slate-50 flex flex-col p-3 lg:p-4">
       
       {/* Top Header Navigation */}
       <div className="shrink-0 mb-2 flex justify-between items-center">
@@ -203,40 +203,40 @@ const ResumeBuilder = () => {
       {/* Main Layout Grid */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         
-        {/* === LEFT SIDE: FORM EDITOR BOX === */}
-        <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden h-fit">
+        {/* === LEFT SIDE: ORIGINAL FORM EDITOR === */}
+        <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden">
           
-          {/* Header Toolbar */}
+          {/* Header Controls Toolbar */}
           <div className="p-2 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0 bg-slate-50/50">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
                
-               {/* Size / Density Adjuster */}
-               <div className="flex items-center bg-white p-0.5 rounded border border-slate-200 text-[11px] ml-1 shadow-2xs">
-                  <Type size={13} className="text-slate-400 mx-1" />
+               {/* FONT SIZE / DENSITY CONTROLLER */}
+               <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 text-xs ml-1 shadow-2xs">
+                  <Type size={14} className="text-slate-400 mx-1" />
                   <button 
                     onClick={() => setFontScale('small')} 
-                    className={`px-2 py-0.5 rounded font-bold transition-all ${fontScale === 'small' ? 'bg-slate-100 text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-1 rounded font-medium transition-all ${fontScale === 'small' ? 'bg-slate-100 text-green-700 font-bold' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     Small
                   </button>
                   <button 
                     onClick={() => setFontScale('normal')} 
-                    className={`px-2 py-0.5 rounded font-bold transition-all ${fontScale === 'normal' ? 'bg-slate-100 text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-1 rounded font-medium transition-all ${fontScale === 'normal' ? 'bg-slate-100 text-green-700 font-bold' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     Normal
                   </button>
                   <button 
                     onClick={() => setFontScale('large')} 
-                    className={`px-2 py-0.5 rounded font-bold transition-all ${fontScale === 'large' ? 'bg-slate-100 text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-1 rounded font-medium transition-all ${fontScale === 'large' ? 'bg-slate-100 text-green-700 font-bold' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     Large
                   </button>
                </div>
             </div>
             
-            {/* Pagination Controls */}
+            {/* Section Pagination */}
             <div className="flex items-center gap-1">
                 <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={18} strokeWidth={2.5} /></button>
                 <span className="text-xs font-bold text-slate-400 w-8 text-center select-none">{activeSectionIndex + 1}/{sections.length}</span>
@@ -244,11 +244,8 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content (Clean Natural Spacing) */}
-          <div className="p-3.5 space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto custom-scrollbar
-                          [&_input]:!h-9 [&_input]:!py-1.5 [&_input]:!px-3 [&_input]:!text-xs [&_input]:!rounded-lg
-                          [&_label]:!mb-1 [&_label]:!text-xs [&_label]:!font-semibold [&_label]:!text-slate-600
-                          [&_textarea]:!p-2.5 [&_textarea]:!text-xs [&_textarea]:!rounded-lg">
+          {/* Form Content - Clean Default Styling */}
+          <div className="p-4">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -257,28 +254,28 @@ const ResumeBuilder = () => {
              {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
-          {/* Footer Actions (Sits right beneath inputs) */}
-          <div className="p-2 border-t border-slate-100 space-y-1.5 bg-slate-50/50 shrink-0">
-            <button onClick={saveResume} disabled={isSaving} className="w-full py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg font-bold text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
+          {/* Footer Actions */}
+          <div className="p-3 border-t border-slate-100 space-y-2 bg-slate-50/50 shrink-0">
+            <button onClick={saveResume} disabled={isSaving} className="w-full py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-lg font-bold text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
                 {isSaving ? <Loader2 className="animate-spin" size={14} /> : "Save Changes"}
             </button>
 
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <button 
                 onClick={toggleVisibility} 
-                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
               >
                   {resumeData.public ? <EyeIcon size={14}/> : <EyeOffIcon size={14}/>}
                   {resumeData.public ? "Public" : "Private"}
               </button>
 
-              <button onClick={downloadResume} className="flex items-center justify-center gap-1.5 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition-all">
+              <button onClick={downloadResume} className="flex items-center justify-center gap-1.5 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition-all">
                   <DownloadIcon size={14}/> Download PDF
               </button>
             </div>
 
             {resumeData.public && (
-              <button onClick={handleShare} className="w-full py-1.5 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5 hover:bg-blue-100 transition-all">
+              <button onClick={handleShare} className="w-full py-2 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5 hover:bg-blue-100 transition-all">
                 <Share2Icon size={14} /> Share Resume Link
               </button>
             )}
