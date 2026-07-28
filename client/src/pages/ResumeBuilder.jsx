@@ -54,24 +54,23 @@ const ResumeBuilder = () => {
       const isMobile = window.innerWidth < 1024;
 
       if (isMobile) {
-        // Original mobile scale logic unchanged
+        // Original mobile scale logic preserved exactly
         const availableWidth = window.innerWidth - 32;
         const scale = availableWidth / a4Width;
         setPreviewScale(Math.min(Math.max(scale, 0.3), 0.85));
         return;
       }
 
-      // Desktop: Height-fitted with additional padding to keep layout compact
+      // Desktop: Scale calculation focused on dynamic fitting
       if (!previewBoxRef.current) return;
       const { clientWidth, clientHeight } = previewBoxRef.current;
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const paddingX = 40;
-      const paddingY = 40; // Increased padding to reduce vertical sheet height on desktop
-      const scaleX = (clientWidth - paddingX) / a4Width;
-      const scaleY = (clientHeight - paddingY) / a4Height;
+      const padding = 24;
+      const scaleX = (clientWidth - padding) / a4Width;
+      const scaleY = (clientHeight - padding) / a4Height;
       const fitScale = Math.min(scaleX, scaleY);
-      setPreviewScale(Math.max(fitScale, 0.22));
+      setPreviewScale(Math.max(fitScale, 0.25));
     };
 
     updateScale();
@@ -220,16 +219,17 @@ const ResumeBuilder = () => {
   const scaledContainerHeightMobile = Math.round(a4HeightPx * previewScale);
 
   return (
-    <div className="min-h-screen lg:h-[calc(100vh-65px)] w-full lg:overflow-hidden bg-slate-50 flex flex-col p-3 lg:p-2">
+    // Height adjusted to account for Navbar on Desktop without page overflow
+    <div className="min-h-screen lg:h-[calc(100vh-80px)] w-full lg:overflow-hidden bg-slate-50 flex flex-col p-3 lg:p-2">
       
-      {/* Top Header Link */}
+      {/* Top Navigation Link */}
       <div className="shrink-0 mb-2 lg:mb-1 flex justify-between items-center">
         <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-sm lg:text-xs font-medium transition-colors">
           <ArrowLeftIcon size={14} /> Back to Dashboard
         </Link>
       </div>
 
-      {/* Main Container */}
+      {/* Main Grid Container */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-2.5 min-h-0 lg:overflow-hidden">
         
         {/* === LEFT SIDE: EDITOR === */}
@@ -249,12 +249,12 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content: Compacted input boxes and label vertical margins for Desktop */}
+          {/* Form Content: Strict !important overrides force inputs & labels to collapse internal padding on Desktop */}
           <div className="p-4 lg:p-2 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 text-sm lg:text-xs
-                          lg:[&_label]:mb-0.5 lg:[&_label]:text-[10px] lg:[&_label]:font-semibold lg:[&_label]:text-slate-500
-                          lg:[&_input]:py-0.5 lg:[&_input]:px-2 lg:[&_input]:text-xs lg:[&_input]:h-7 lg:[&_input]:mb-1.5 
-                          lg:[&_textarea]:py-1 lg:[&_textarea]:px-2 lg:[&_textarea]:text-xs 
-                          lg:[&_p]:hidden lg:[&_h2]:hidden lg:[&_.space-y-4]:space-y-0.5 lg:[&_.space-y-6]:space-y-0.5 lg:[&_.gap-4]:gap-1">
+                          lg:[&_label]:!mb-0.5 lg:[&_label]:!text-[10px] lg:[&_label]:!font-semibold lg:[&_label]:!text-slate-500
+                          lg:[&_input]:!py-0.5 lg:[&_input]:!px-2 lg:[&_input]:!text-xs lg:[&_input]:!h-7 lg:[&_input]:!mb-1 
+                          lg:[&_textarea]:!py-1 lg:[&_textarea]:!px-2 lg:[&_textarea]:!text-xs 
+                          lg:[&_div]:!mb-0 lg:[&_div]:!space-y-0.5 lg:[&_p]:hidden lg:[&_h2]:hidden">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -297,19 +297,20 @@ const ResumeBuilder = () => {
           style={{
             height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : '100%'
           }}
-          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-center lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-2 mb-6 lg:mb-0"
+          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-start lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-2 mb-6 lg:mb-0"
         >
           {/* Scaled Render Container */}
           <div 
             style={{
               width: '210mm',
-              height: '297mm',
+              minHeight: '297mm',
+              height: 'fit-content',
               transform: `scale(${previewScale})`,
-              transformOrigin: 'center center'
+              transformOrigin: 'top center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start"
           >
-            <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs border border-slate-100 shadow-xs">
+            <div id="resume-preview-id" className="w-full bg-white rounded-xs border border-slate-100 shadow-xs overflow-hidden">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
