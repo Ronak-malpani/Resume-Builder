@@ -32,7 +32,7 @@ const ResumeBuilder = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.45);
 
-  const desktopPreviewRef = useRef(null);
+  const previewBoxRef = useRef(null);
 
   // Define Sections
   const sections = useMemo(() => [
@@ -46,32 +46,38 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Calculate dynamic scale for Desktop viewports
+  // Calculate scaling accurately for both mobile and desktop
   useEffect(() => {
-    const updateDesktopScale = () => {
-      if (window.innerWidth < 1024) return; // Skip calculation for mobile
-
-      if (!desktopPreviewRef.current) return;
-      const { clientWidth, clientHeight } = desktopPreviewRef.current;
-      if (clientWidth === 0 || clientHeight === 0) return;
-
+    const updateScale = () => {
       const a4Width = 794; 
       const a4Height = 1123;
-      const padding = 32;
+      const isMobile = window.innerWidth < 1024;
 
-      const scaleX = (clientWidth - padding) / a4Width;
-      const scaleY = (clientHeight - padding) / a4Height;
+      if (isMobile) {
+        // Original mobile scale logic
+        const availableWidth = window.innerWidth - 32;
+        const scale = availableWidth / a4Width;
+        setPreviewScale(Math.min(Math.max(scale, 0.3), 0.85));
+        return;
+      }
+
+      // Desktop: Height-fitted calculation without clipping top or bottom
+      if (!previewBoxRef.current) return;
+      const { clientWidth, clientHeight } = previewBoxRef.current;
+      if (clientWidth === 0 || clientHeight === 0) return;
+
+      const scaleX = (clientWidth - 32) / a4Width;
+      const scaleY = (clientHeight - 32) / a4Height;
       const fitScale = Math.min(scaleX, scaleY);
-      
       setPreviewScale(Math.max(fitScale, 0.25));
     };
 
-    updateDesktopScale();
-    const timer = setTimeout(updateDesktopScale, 100);
-    window.addEventListener('resize', updateDesktopScale);
+    updateScale();
+    const timer = setTimeout(updateScale, 100);
+    window.addEventListener('resize', updateScale);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', updateDesktopScale);
+      window.removeEventListener('resize', updateScale);
     };
   }, [resumeData]);
 
@@ -102,7 +108,7 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // Update Section Data
+  // Safe Update Handler
   const handleDataChange = (sectionKey, newData) => {
     setResumeData((prev) => ({
       ...prev,
@@ -208,6 +214,9 @@ const ResumeBuilder = () => {
     );
   }
 
+  const a4HeightPx = 1123;
+  const scaledContainerHeightMobile = Math.round(a4HeightPx * previewScale);
+
   return (
     <div className="min-h-screen lg:h-screen w-full lg:overflow-hidden bg-slate-50 flex flex-col p-4 lg:p-3">
       
@@ -218,7 +227,7 @@ const ResumeBuilder = () => {
         </Link>
       </div>
 
-      {/* Main Grid */}
+      {/* Main Container */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-3 min-h-0 lg:overflow-hidden">
         
         {/* === LEFT SIDE: EDITOR === */}
@@ -281,35 +290,22 @@ const ResumeBuilder = () => {
         </div>
 
         {/* === RIGHT SIDE: PREVIEW === */}
-        
-        {/* --- MOBILE PREVIEW CONTAINER (Shown only on small screens) --- */}
-        <div className="block lg:hidden bg-white rounded-2xl border border-slate-200 p-2 shadow-sm mb-6 overflow-x-auto">
-          <div className="w-[794px] transform origin-top-left scale-[0.42] sm:scale-[0.55]">
-            <div id="resume-preview-id-mobile" className="w-full bg-white border border-slate-100">
-               {debouncedResumeData && (
-                 <ResumePreview 
-                     data={debouncedResumeData} 
-                     template={debouncedResumeData.template} 
-                     accentColor={debouncedResumeData.accent_color} 
-                 />
-               )}
-            </div>
-          </div>
-        </div>
-
-        {/* --- DESKTOP PREVIEW CONTAINER (Shown only on large screens) --- */}
         <div 
-          ref={desktopPreviewRef}
-          className="hidden lg:flex bg-white rounded-xl border border-slate-200 shadow-xs justify-center items-center h-full min-h-0 overflow-hidden relative p-1"
+          ref={previewBoxRef}
+          style={{
+            height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : '100%'
+          }}
+          className="bg-white rounded-2xl lg:rounded-xl border border-slate-200 shadow-sm lg:shadow-xs flex justify-center items-start lg:h-full lg:min-h-0 overflow-hidden relative p-3 lg:p-4 mb-6 lg:mb-0"
         >
+          {/* Scaled Render Container */}
           <div 
             style={{
               width: '210mm',
               height: '297mm',
               transform: `scale(${previewScale})`,
-              transformOrigin: 'center center'
+              transformOrigin: 'top center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-center"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start"
           >
             <div id="resume-preview-id" className="w-full h-full bg-white rounded-xs border border-slate-100">
                {debouncedResumeData && (
