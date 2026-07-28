@@ -7,7 +7,7 @@ import ProfessionalTemplate from '../assets/templates/ProfessionalTemplate';
 
 const ResumePreview = ({ data, template, accentColor }) => {
   
-  // 1. Data Sanitization
+  // Data Sanitization
   const sanitizedData = useMemo(() => ({
     ...data,
     personal_info: {
@@ -32,7 +32,7 @@ const ResumePreview = ({ data, template, accentColor }) => {
     education: Array.isArray(data.education) ? data.education : []
   }), [data]);
 
-  // 2. Select Template Component
+  // Select Template Component
   const renderTemplate = () => {
     switch(template){
       case "modern": return <ModernTemplate data={sanitizedData} accentColor={accentColor}/>;
@@ -44,7 +44,7 @@ const ResumePreview = ({ data, template, accentColor }) => {
   };
 
   return (
-    // Dynamic height adjustment: fit content naturally without trailing empty canvas
+    // Wraps template strictly around content without pushing trailing white pixels
     <div className="w-full h-fit bg-white text-left box-border">
         {renderTemplate()}
     </div>

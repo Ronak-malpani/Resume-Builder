@@ -45,7 +45,7 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Precision scaling calculation based on active container bounds
+  // Auto Scaling Calculation
   useEffect(() => {
     const updateScale = () => {
       const isMobile = window.innerWidth < 1024;
@@ -61,10 +61,10 @@ const ResumeBuilder = () => {
       const { clientWidth, clientHeight } = previewBoxRef.current;
       if (clientWidth === 0 || clientHeight === 0) return;
 
-      const scaleX = (clientWidth - 24) / 794;
-      const scaleY = (clientHeight - 24) / 1123;
+      const scaleX = (clientWidth - 20) / 794;
+      const scaleY = (clientHeight - 20) / 1123;
       const fitScale = Math.min(scaleX, scaleY);
-      setPreviewScale(Math.max(fitScale, 0.3));
+      setPreviewScale(Math.max(fitScale, 0.35));
     };
 
     updateScale();
@@ -211,7 +211,7 @@ const ResumeBuilder = () => {
       </div>
 
       {/* Main Grid Container */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 lg:overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 lg:overflow-hidden items-start">
         
         {/* === LEFT SIDE: COMPACT FORM EDITOR === */}
         <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs lg:h-full lg:min-h-0 overflow-hidden">
@@ -230,12 +230,13 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content Wrapper: Ultra-compact desktop input sizes fit all fields without scrolling */}
+          {/* Form Content: Hyper-compacted spacing to guarantee all 7 fields fit on desktop */}
           <div className="p-2 lg:p-1.5 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 
-                          lg:[&_input]:!h-6 lg:[&_input]:!py-0 lg:[&_input]:!px-2 lg:[&_input]:!mb-1 lg:[&_input]:!text-[11px] 
+                          lg:[&_input]:!h-5.5 lg:[&_input]:!py-0 lg:[&_input]:!px-2 lg:[&_input]:!mb-0 lg:[&_input]:!text-[11px] 
                           lg:[&_label]:!mb-0 lg:[&_label]:!text-[9px] lg:[&_label]:!font-semibold lg:[&_label]:!text-slate-500
                           lg:[&_textarea]:!py-0.5 lg:[&_textarea]:!px-2 lg:[&_textarea]:!text-xs
-                          lg:[&_div.space-y-4]:!space-y-0.5 lg:[&_div.space-y-6]:!space-y-0.5 lg:[&_p]:hidden">
+                          lg:[&_div]:!gap-0 lg:[&_div]:!space-y-0.5 lg:[&_div]:!my-0
+                          lg:[&_.space-y-4]:!space-y-0.5 lg:[&_.space-y-6]:!space-y-0.5 lg:[&_p]:hidden">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
              {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
@@ -272,26 +273,25 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT SIDE: PREVIEW === */}
+        {/* === RIGHT SIDE: PREVIEW (TIGHT CONTAINER - NO LOWER WHITESPACE) === */}
         <div 
           ref={previewBoxRef}
           style={{
-            height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : '100%'
+            height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : 'fit-content'
           }}
-          className="bg-white rounded-xl border border-slate-200 shadow-xs flex justify-center items-start lg:h-full lg:min-h-0 overflow-hidden relative p-2"
+          className="bg-white rounded-xl border border-slate-200 shadow-xs flex justify-center items-start lg:max-h-full overflow-hidden relative p-2 self-start"
         >
-          {/* Scaled Render Container adjusts height dynamically */}
+          {/* Dynamically sizing canvas container */}
           <div 
             style={{
               width: '210mm',
-              minHeight: '297mm',
               height: 'fit-content',
               transform: `scale(${previewScale})`,
               transformOrigin: 'top center'
             }}
             className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start"
           >
-            <div id="resume-preview-id" className="w-full bg-white rounded-xs border border-slate-100 shadow-xs overflow-hidden">
+            <div id="resume-preview-id" className="w-full bg-white rounded-xs border border-slate-100 shadow-xs overflow-hidden h-fit">
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
