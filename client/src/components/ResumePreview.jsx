@@ -5,7 +5,7 @@ import MinimalTemplate from '../assets/templates/MinimalTemplate';
 import MinimalImageTemplate from '../assets/templates/MinimalImageTemplate';
 import ProfessionalTemplate from '../assets/templates/ProfessionalTemplate';
 
-const ResumePreview = ({ data, template, accentColor, fontScale = 'auto' }) => {
+const ResumePreview = ({ data, template, accentColor, fontScale = 'normal' }) => {
   
   // Data Sanitization
   const sanitizedData = useMemo(() => ({
@@ -32,41 +32,19 @@ const ResumePreview = ({ data, template, accentColor, fontScale = 'auto' }) => {
     education: Array.isArray(data.education) ? data.education : []
   }), [data]);
 
-  // Determine active typography & spacing classes based on auto or manual settings
-  const dynamicTypographyClass = useMemo(() => {
-    let mode = fontScale;
-
-    // Automatic calculation based on character and entry counts
-    if (fontScale === 'auto') {
-      const summaryLen = sanitizedData.professional_summary?.length || 0;
-      const expCount = sanitizedData.experience?.length || 0;
-      const projCount = sanitizedData.project?.length || 0;
-      const eduCount = sanitizedData.education?.length || 0;
-
-      const score = summaryLen + (expCount * 140) + (projCount * 120) + (eduCount * 80);
-
-      if (score < 400) mode = 'large';
-      else if (score > 900) mode = 'small';
-      else mode = 'normal';
-    }
-
-    switch (mode) {
+  // Typography & Spacing class generation for S / M / L density
+  const typographyClass = useMemo(() => {
+    switch (fontScale) {
       case 'small':
-        // Compact mode for dense content
-        return "[&_*]:!text-[10.5px] [&_h1]:!text-xl [&_h2]:!text-sm [&_p]:!leading-snug [&_li]:!leading-snug [&_section]:!mb-2.5";
-      
+        return "[&_*]:!text-[10px] [&_h1]:!text-lg [&_h2]:!text-xs [&_p]:!leading-snug [&_li]:!leading-snug [&_section]:!mb-2";
       case 'large':
-        // Expanded mode for short content (fills empty whitespace)
-        return "[&_*]:!text-[13.5px] [&_h1]:!text-3xl [&_h2]:!text-xl [&_p]:!leading-relaxed [&_li]:!leading-relaxed [&_section]:!mb-6";
-      
+        return "[&_*]:!text-[14px] [&_h1]:!text-3xl [&_h2]:!text-xl [&_p]:!leading-relaxed [&_li]:!leading-relaxed [&_section]:!mb-5";
       case 'normal':
       default:
-        // Balanced default standard sizes
-        return "[&_*]:!text-[12px] [&_h1]:!text-2xl [&_h2]:!text-base [&_p]:!leading-normal [&_li]:!leading-normal [&_section]:!mb-4";
+        return "[&_*]:!text-[12px] [&_h1]:!text-2xl [&_h2]:!text-base [&_p]:!leading-normal [&_li]:!leading-normal [&_section]:!mb-3.5";
     }
-  }, [sanitizedData, fontScale]);
+  }, [fontScale]);
 
-  // Render active template
   const renderTemplate = () => {
     switch(template){
       case "modern": return <ModernTemplate data={sanitizedData} accentColor={accentColor}/>;
@@ -78,7 +56,7 @@ const ResumePreview = ({ data, template, accentColor, fontScale = 'auto' }) => {
   };
 
   return (
-    <div className={`w-full min-h-[297mm] bg-white text-left box-border p-6 shadow-sm ${dynamicTypographyClass}`}>
+    <div className={`w-full h-auto min-h-0 bg-white text-left box-border p-6 shadow-xs ${typographyClass}`}>
         {renderTemplate()}
     </div>
   );
