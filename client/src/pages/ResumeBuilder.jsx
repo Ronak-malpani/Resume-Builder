@@ -8,7 +8,8 @@ import html2pdf from 'html2pdf.js';
 // Icons
 import { 
   ArrowLeftIcon, ChevronLeft, ChevronRight, 
-  EyeIcon, EyeOffIcon, DownloadIcon, Loader2, Share2Icon, Type
+  EyeIcon, EyeOffIcon, DownloadIcon, Loader2, Share2Icon, 
+  Bold, Italic, Underline, Type, Plus, Minus
 } from 'lucide-react';
 
 // Components
@@ -32,10 +33,13 @@ const ResumeBuilder = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.42);
   
-  // Font / Density scale mode: 'small' | 'normal' | 'large'
-  const [fontScale, setFontScale] = useState('normal');
+  // Exact Numeric Font Size State (e.g. 10, 12, 14, 18, 24, 32, 50)
+  const [fontSize, setFontSize] = useState(12);
+  const [selectedTarget, setSelectedTarget] = useState(null);
 
   const previewBoxRef = useRef(null);
+
+  const fontSizesList = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 50];
 
   const sections = useMemo(() => [
     { id: "personal", name: "Personal Information" },
@@ -89,6 +93,38 @@ const ResumeBuilder = () => {
     }, 500);
     return () => clearTimeout(timer);
   }, [resumeData]);
+
+  // Handle direct text formatting commands (Bold, Italic, Underline)
+  const applyTextFormat = (command, value = null) => {
+    document.execCommand(command, false, value);
+  };
+
+  // Handle clicking on specific elements in preview
+  const handlePreviewClick = (e) => {
+    const clickedElement = e.target;
+    if (clickedElement) {
+      setSelectedTarget(clickedElement);
+      
+      // Auto switch section if clicking header/summary/experience etc.
+      const text = clickedElement.innerText?.toLowerCase() || '';
+      if (text.includes('summary')) setActiveSectionIndex(1);
+      else if (text.includes('experience')) setActiveSectionIndex(2);
+      else if (text.includes('education')) setActiveSectionIndex(3);
+      else if (text.includes('project')) setActiveSectionIndex(4);
+      else if (text.includes('skill')) setActiveSectionIndex(5);
+    }
+  };
+
+  // Increase / Decrease selected element or whole document size
+  const adjustFontSize = (delta) => {
+    if (selectedTarget) {
+      const currentSize = parseInt(window.getComputedStyle(selectedTarget).fontSize) || fontSize;
+      const newSize = Math.min(Math.max(currentSize + delta, 10), 50);
+      selectedTarget.style.fontSize = `${newSize}px`;
+    } else {
+      setFontSize(prev => Math.min(Math.max(prev + delta, 10), 50));
+    }
+  };
 
   const handleDataChange = (sectionKey, newData) => {
     setResumeData((prev) => ({
@@ -160,28 +196,6 @@ const ResumeBuilder = () => {
     }
   };
 
-  const handleShare = async () => {
-    const url = `${window.location.origin}/view/${resumeId}`;
-    const title = `${resumeData.personal_info?.full_name || 'My'} Resume`;
-    const text = "Check out my professional resume created with Resume Builder.";
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, text, url });
-        toast.success("Shared successfully!");
-      } catch (error) {
-        console.log('Share cancelled', error);
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied to clipboard!");
-      } catch (err) {
-        toast.error("Failed to copy link");
-      }
-    }
-  };
-
   if (!resumeData) {
     return (
       <div className="flex items-center justify-center min-h-screen text-slate-500">
@@ -203,36 +217,44 @@ const ResumeBuilder = () => {
       {/* Main Layout Grid */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         
-        {/* === LEFT SIDE: ORIGINAL FORM EDITOR === */}
+        {/* === LEFT SIDE: FORM EDITOR & RICH TOOLBAR === */}
         <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden">
           
-          {/* Header Controls Toolbar */}
-          <div className="p-2 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0 bg-slate-50/50">
-            <div className="flex items-center gap-2">
+          {/* Header Controls & Rich Formatting Toolbar */}
+          <div className="p-2 border-b border-slate-100 flex flex-wrap justify-between items-center gap-2 shrink-0 bg-slate-50/50">
+            <div className="flex items-center gap-1.5 flex-wrap">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
                
-               {/* FONT SIZE / DENSITY CONTROLLER */}
-               <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 text-xs ml-1 shadow-2xs">
-                  <Type size={14} className="text-slate-400 mx-1" />
-                  <button 
-                    onClick={() => setFontScale('small')} 
-                    className={`px-2 py-1 rounded font-medium transition-all ${fontScale === 'small' ? 'bg-slate-100 text-green-700 font-bold' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    Small
+               {/* BOLD / ITALIC / UNDERLINE CONTROLS */}
+               <div className="flex items-center bg-white p-0.5 rounded-md border border-slate-200 text-xs shadow-2xs">
+                  <button onClick={() => applyTextFormat('bold')} className="p-1 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900" title="Bold">
+                    <Bold size={13} />
                   </button>
-                  <button 
-                    onClick={() => setFontScale('normal')} 
-                    className={`px-2 py-1 rounded font-medium transition-all ${fontScale === 'normal' ? 'bg-slate-100 text-green-700 font-bold' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    Normal
+                  <button onClick={() => applyTextFormat('italic')} className="p-1 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900" title="Italic">
+                    <Italic size={13} />
                   </button>
-                  <button 
-                    onClick={() => setFontScale('large')} 
-                    className={`px-2 py-1 rounded font-medium transition-all ${fontScale === 'large' ? 'bg-slate-100 text-green-700 font-bold' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    Large
+                  <button onClick={() => applyTextFormat('underline')} className="p-1 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900" title="Underline">
+                    <Underline size={13} />
                   </button>
+               </div>
+
+               {/* NUMERIC FONT SIZE SELECTOR (10 to 50) */}
+               <div className="flex items-center bg-white p-0.5 rounded-md border border-slate-200 text-xs shadow-2xs">
+                  <Type size={13} className="text-slate-400 mx-1" />
+                  <select 
+                    value={fontSize} 
+                    onChange={(e) => setFontSize(Number(e.target.value))}
+                    className="bg-transparent font-semibold text-slate-700 outline-none text-xs cursor-pointer py-0.5"
+                  >
+                    {fontSizesList.map(sz => (
+                      <option key={sz} value={sz}>{sz}px</option>
+                    ))}
+                  </select>
+
+                  {/* Incremental +/- buttons */}
+                  <button onClick={() => adjustFontSize(1)} className="p-0.5 hover:bg-slate-100 rounded ml-1 text-slate-600"><Plus size={12}/></button>
+                  <button onClick={() => adjustFontSize(-1)} className="p-0.5 hover:bg-slate-100 rounded text-slate-600"><Minus size={12}/></button>
                </div>
             </div>
             
@@ -273,16 +295,10 @@ const ResumeBuilder = () => {
                   <DownloadIcon size={14}/> Download PDF
               </button>
             </div>
-
-            {resumeData.public && (
-              <button onClick={handleShare} className="w-full py-2 border border-dashed border-blue-200 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5 hover:bg-blue-100 transition-all">
-                <Share2Icon size={14} /> Share Resume Link
-              </button>
-            )}
           </div>
         </div>
 
-        {/* === RIGHT SIDE: PREVIEW BOX === */}
+        {/* === RIGHT SIDE: CLICKABLE PREVIEW BOX === */}
         <div 
           ref={previewBoxRef}
           className="w-full flex justify-center items-start sticky top-4 overflow-hidden"
@@ -305,7 +321,8 @@ const ResumeBuilder = () => {
                      data={debouncedResumeData} 
                      template={debouncedResumeData.template} 
                      accentColor={debouncedResumeData.accent_color}
-                     fontScale={fontScale}
+                     baseFontSize={fontSize}
+                     onElementClick={handlePreviewClick}
                  />
                )}
             </div>
