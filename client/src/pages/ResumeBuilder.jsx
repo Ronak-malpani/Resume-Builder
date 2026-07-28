@@ -8,7 +8,7 @@ import html2pdf from 'html2pdf.js';
 // Icons
 import { 
   ArrowLeftIcon, ChevronLeft, ChevronRight, 
-  EyeIcon, EyeOffIcon, DownloadIcon, Loader2, Share2Icon 
+  EyeIcon, EyeOffIcon, DownloadIcon, Loader2, Share2Icon, ALargeSmall
 } from 'lucide-react';
 
 // Components
@@ -31,6 +31,9 @@ const ResumeBuilder = () => {
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.45);
+  
+  // Font scaling mode: 'auto' | 'small' | 'normal' | 'large'
+  const [fontScale, setFontScale] = useState('auto');
 
   const previewBoxRef = useRef(null);
 
@@ -45,26 +48,16 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Auto Scaling Calculation
+  // Precision scaling calculation
   useEffect(() => {
     const updateScale = () => {
-      const isMobile = window.innerWidth < 1024;
-
-      if (isMobile) {
-        const availableWidth = window.innerWidth - 32;
-        const scale = availableWidth / 794;
-        setPreviewScale(Math.min(Math.max(scale, 0.3), 0.85));
-        return;
-      }
-
       if (!previewBoxRef.current) return;
-      const { clientWidth, clientHeight } = previewBoxRef.current;
-      if (clientWidth === 0 || clientHeight === 0) return;
+      const { clientWidth } = previewBoxRef.current;
+      if (clientWidth === 0) return;
 
-      const scaleX = (clientWidth - 20) / 794;
-      const scaleY = (clientHeight - 20) / 1123;
-      const fitScale = Math.min(scaleX, scaleY);
-      setPreviewScale(Math.max(fitScale, 0.35));
+      const availableWidth = clientWidth - 24;
+      const scale = availableWidth / 794;
+      setPreviewScale(Math.min(Math.max(scale, 0.25), 0.95));
     };
 
     updateScale();
@@ -197,9 +190,6 @@ const ResumeBuilder = () => {
     );
   }
 
-  const a4HeightPx = 1123;
-  const scaledContainerHeightMobile = Math.round(a4HeightPx * previewScale);
-
   return (
     <div className="w-full lg:max-h-[calc(100vh-140px)] lg:h-[680px] bg-slate-50 flex flex-col p-2 lg:p-2.5 overflow-y-auto lg:overflow-hidden">
       
@@ -211,16 +201,39 @@ const ResumeBuilder = () => {
       </div>
 
       {/* Main Grid Container */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 lg:overflow-hidden items-start">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 lg:overflow-hidden items-start">
         
-        {/* === LEFT SIDE: COMPACT FORM EDITOR === */}
+        {/* === LEFT SIDE: FORM EDITOR === */}
         <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs lg:h-full lg:min-h-0 overflow-hidden">
           
-          {/* Header Controls */}
-          <div className="p-1.5 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0">
-            <div className="flex gap-1.5">
+          {/* Header Controls with Font Size Selector */}
+          <div className="p-1.5 border-b border-slate-100 flex justify-between items-center gap-2 shrink-0 flex-wrap">
+            <div className="flex items-center gap-1.5">
                <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
                <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
+               
+               {/* Quick Font Size Adjuster */}
+               <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[10px]">
+                  <ALargeSmall size={14} className="text-slate-400 mx-1" />
+                  <button 
+                    onClick={() => setFontScale('small')} 
+                    className={`px-1.5 py-0.5 rounded font-bold ${fontScale === 'small' ? 'bg-white shadow-xs text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    Small
+                  </button>
+                  <button 
+                    onClick={() => setFontScale('normal')} 
+                    className={`px-1.5 py-0.5 rounded font-bold ${fontScale === 'normal' ? 'bg-white shadow-xs text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    Normal
+                  </button>
+                  <button 
+                    onClick={() => setFontScale('large')} 
+                    className={`px-1.5 py-0.5 rounded font-bold ${fontScale === 'large' ? 'bg-white shadow-xs text-green-700' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    Large
+                  </button>
+               </div>
             </div>
             
             <div className="flex items-center gap-1">
@@ -230,7 +243,7 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content: Hyper-compacted spacing to guarantee all 7 fields fit on desktop */}
+          {/* Form Content */}
           <div className="p-2 lg:p-1.5 flex-1 lg:overflow-y-auto custom-scrollbar lg:min-h-0 
                           lg:[&_input]:!h-5.5 lg:[&_input]:!py-0 lg:[&_input]:!px-2 lg:[&_input]:!mb-0 lg:[&_input]:!text-[11px] 
                           lg:[&_label]:!mb-0 lg:[&_label]:!text-[9px] lg:[&_label]:!font-semibold lg:[&_label]:!text-slate-500
@@ -273,30 +286,30 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT SIDE: PREVIEW (TIGHT CONTAINER - NO LOWER WHITESPACE) === */}
+        {/* === RIGHT SIDE: PREVIEW CONTAINER === */}
         <div 
           ref={previewBoxRef}
-          style={{
-            height: window.innerWidth < 1024 ? `${scaledContainerHeightMobile + 24}px` : 'fit-content'
-          }}
-          className="bg-white rounded-xl border border-slate-200 shadow-xs flex justify-center items-start lg:max-h-full overflow-hidden relative p-2 self-start"
+          className="w-full flex justify-center items-start lg:max-h-full overflow-hidden"
         >
-          {/* Dynamically sizing canvas container */}
           <div 
             style={{
               width: '210mm',
-              height: 'fit-content',
+              height: '297mm',
               transform: `scale(${previewScale})`,
               transformOrigin: 'top center'
             }}
             className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start"
           >
-            <div id="resume-preview-id" className="w-full bg-white rounded-xs border border-slate-100 shadow-xs overflow-hidden h-fit">
+            <div 
+              id="resume-preview-id" 
+              className="w-full h-full bg-white rounded-md border border-slate-200 shadow-md overflow-hidden"
+            >
                {debouncedResumeData && (
                  <ResumePreview 
                      data={debouncedResumeData} 
                      template={debouncedResumeData.template} 
-                     accentColor={debouncedResumeData.accent_color} 
+                     accentColor={debouncedResumeData.accent_color}
+                     fontScale={fontScale}
                  />
                )}
             </div>
