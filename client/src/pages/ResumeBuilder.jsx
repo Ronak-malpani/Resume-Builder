@@ -32,12 +32,14 @@ const ResumeBuilder = () => {
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.42);
-  
-  // Exact Numeric Font Size State (e.g. 10, 12, 14, 18, 24, 32, 50)
+  const [previewHeight, setPreviewHeight] = useState(500);
+
+  // Exact Numeric Font Size State
   const [fontSize, setFontSize] = useState(12);
   const [selectedTarget, setSelectedTarget] = useState(null);
 
   const previewBoxRef = useRef(null);
+  const previewContentRef = useRef(null);
 
   const fontSizesList = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 50];
 
@@ -52,22 +54,27 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Precision scaling calculation for right preview box
+  // Recalculate scaling and exact layout height for the right box
   useEffect(() => {
-    const updateScale = () => {
+    const updateDimensions = () => {
       if (!previewBoxRef.current) return;
       const { clientWidth } = previewBoxRef.current;
       if (clientWidth === 0) return;
 
-      const availableWidth = clientWidth;
-      const scale = availableWidth / 794; // 794px is exact 210mm standard A4 width
-      setPreviewScale(Math.min(Math.max(scale, 0.25), 0.85));
+      const scale = clientWidth / 794; // Exact A4 width in px
+      const clampedScale = Math.min(Math.max(scale, 0.25), 0.85);
+      setPreviewScale(clampedScale);
+
+      if (previewContentRef.current) {
+        const fullHeight = previewContentRef.current.offsetHeight || 1120;
+        setPreviewHeight(fullHeight * clampedScale);
+      }
     };
 
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
-  }, [resumeData]);
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [resumeData, debouncedResumeData, fontSize]);
 
   useEffect(() => {
     const loadResume = async () => {
@@ -105,7 +112,6 @@ const ResumeBuilder = () => {
     if (clickedElement) {
       setSelectedTarget(clickedElement);
       
-      // Auto switch section if clicking header/summary/experience etc.
       const text = clickedElement.innerText?.toLowerCase() || '';
       if (text.includes('summary')) setActiveSectionIndex(1);
       else if (text.includes('experience')) setActiveSectionIndex(2);
@@ -159,6 +165,7 @@ const ResumeBuilder = () => {
     }
   };
 
+  // FIX: Export via Off-Screen 100% Unscaled Clone to prevent text shift / horizontal cutoff
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -166,7 +173,16 @@ const ResumeBuilder = () => {
     try {
       toast.success("Downloading PDF...");
       await document.fonts.ready;
-      
+
+      // Clone element off-screen without any CSS transform applied
+      const clone = element.cloneNode(true);
+      clone.style.transform = "none";
+      clone.style.width = "794px";
+      clone.style.position = "absolute";
+      clone.style.left = "-9999px";
+      clone.style.top = "0px";
+      document.body.appendChild(clone);
+
       const opt = {
         margin: 0,
         filename: `${resumeData?.personal_info?.full_name || 'Resume'}.pdf`,
@@ -175,7 +191,8 @@ const ResumeBuilder = () => {
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      await html2pdf().set(opt).from(element).save();
+      await html2pdf().set(opt).from(clone).save();
+      document.body.removeChild(clone);
     } catch (e) {
       console.error(e);
       toast.error("Download failed");
@@ -252,7 +269,6 @@ const ResumeBuilder = () => {
                     ))}
                   </select>
 
-                  {/* Incremental +/- buttons */}
                   <button onClick={() => adjustFontSize(1)} className="p-0.5 hover:bg-slate-100 rounded ml-1 text-slate-600"><Plus size={12}/></button>
                   <button onClick={() => adjustFontSize(-1)} className="p-0.5 hover:bg-slate-100 rounded text-slate-600"><Minus size={12}/></button>
                </div>
@@ -298,23 +314,28 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT SIDE: CLEAN FITTED PREVIEW === */}
+        {/* === RIGHT SIDE: EXACT FITTED PREVIEW === */}
         <div 
           ref={previewBoxRef}
-          className="w-full flex justify-center items-start sticky top-4 overflow-hidden"
+          className="w-full flex justify-center items-start sticky top-4"
         >
+          {/* Scaled Layout Wrapper with explicit width & height */}
           <div 
             style={{
-              width: '210mm',
-              height: 'auto',
-              transform: `scale(${previewScale})`,
-              transformOrigin: 'top center'
+              width: `${794 * previewScale}px`,
+              height: `${previewHeight}px`
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start origin-top"
+            className="relative overflow-hidden transition-all duration-75"
           >
             <div 
-              id="resume-preview-id" 
-              className="w-full h-auto bg-white shadow-md border border-slate-200 rounded-sm overflow-hidden"
+              id="resume-preview-id"
+              ref={previewContentRef}
+              style={{
+                width: '794px',
+                transform: `scale(${previewScale})`,
+                transformOrigin: 'top left'
+              }}
+              className="bg-white shadow-md border border-slate-200 rounded-sm overflow-hidden"
             >
                {debouncedResumeData && (
                  <ResumePreview 
