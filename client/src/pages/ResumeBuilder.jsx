@@ -31,15 +31,13 @@ const ResumeBuilder = () => {
   const [debouncedResumeData, setDebouncedResumeData] = useState(null);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [previewScale, setPreviewScale] = useState(0.42);
-  const [previewHeight, setPreviewHeight] = useState(500);
+  const [previewScale, setPreviewScale] = useState(0.55);
 
   // Exact Numeric Font Size State
   const [fontSize, setFontSize] = useState(12);
   const [selectedTarget, setSelectedTarget] = useState(null);
 
   const previewBoxRef = useRef(null);
-  const previewContentRef = useRef(null);
 
   const fontSizesList = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 50];
 
@@ -54,27 +52,22 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Recalculate scaling and exact layout height for the right box
+  // Precision scaling calculation for right preview box
   useEffect(() => {
-    const updateDimensions = () => {
+    const updateScale = () => {
       if (!previewBoxRef.current) return;
       const { clientWidth } = previewBoxRef.current;
       if (clientWidth === 0) return;
 
-      const scale = clientWidth / 794; // 794px standard A4 width
-      const clampedScale = Math.min(Math.max(scale, 0.25), 0.75);
-      setPreviewScale(clampedScale);
-
-      if (previewContentRef.current) {
-        const fullHeight = previewContentRef.current.offsetHeight || 1120;
-        setPreviewHeight(fullHeight * clampedScale);
-      }
+      // Fit preview to exact width of right container
+      const scale = clientWidth / 794; 
+      setPreviewScale(Math.min(Math.max(scale, 0.45), 0.95));
     };
 
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, [resumeData, debouncedResumeData, fontSize]);
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [resumeData]);
 
   useEffect(() => {
     const loadResume = async () => {
@@ -165,7 +158,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // PDF Export using isolated off-screen unscaled clone
+  // PDF Export via Off-Screen 100% Unscaled Clone
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -231,10 +224,10 @@ const ResumeBuilder = () => {
       </div>
 
       {/* Main Layout Grid */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start max-w-[1600px] mx-auto w-full">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full max-w-[1440px] mx-auto">
         
-        {/* === LEFT SIDE: FORM EDITOR & RICH TOOLBAR === */}
-        <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden">
+        {/* === LEFT SIDE: FORM EDITOR & RICH TOOLBAR (Takes 7 cols) === */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden">
           
           {/* Header Controls & Rich Formatting Toolbar */}
           <div className="p-2 border-b border-slate-100 flex flex-wrap justify-between items-center gap-2 shrink-0 bg-slate-50/50">
@@ -313,39 +306,29 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT SIDE: CLEAN STANDALONE PAPER PREVIEW === */}
+        {/* === RIGHT SIDE: PREVIEW (Takes 5 cols, centered, no weird boxes) === */}
         <div 
           ref={previewBoxRef}
-          className="w-full flex justify-center items-start sticky top-4"
+          className="lg:col-span-5 w-full flex justify-center items-start sticky top-4"
         >
-          {/* Scaled paper viewport - zero extra borders/boxes */}
           <div 
+            id="resume-preview-id"
             style={{
-              width: `${794 * previewScale}px`,
-              height: `${previewHeight}px`
+              width: '794px',
+              transform: `scale(${previewScale})`,
+              transformOrigin: 'top center'
             }}
-            className="relative overflow-hidden transition-all duration-100 flex justify-center"
+            className="bg-white shadow-xl border border-slate-200 rounded-sm"
           >
-            <div 
-              id="resume-preview-id"
-              ref={previewContentRef}
-              style={{
-                width: '794px',
-                transform: `scale(${previewScale})`,
-                transformOrigin: 'top center'
-              }}
-              className="bg-white shadow-lg border border-slate-200 rounded-xs overflow-hidden"
-            >
-               {debouncedResumeData && (
-                 <ResumePreview 
-                     data={debouncedResumeData} 
-                     template={debouncedResumeData.template} 
-                     accentColor={debouncedResumeData.accent_color}
-                     baseFontSize={fontSize}
-                     onElementClick={handlePreviewClick}
-                 />
-               )}
-            </div>
+             {debouncedResumeData && (
+               <ResumePreview 
+                   data={debouncedResumeData} 
+                   template={debouncedResumeData.template} 
+                   accentColor={debouncedResumeData.accent_color}
+                   baseFontSize={fontSize}
+                   onElementClick={handlePreviewClick}
+               />
+             )}
           </div>
         </div>
 
