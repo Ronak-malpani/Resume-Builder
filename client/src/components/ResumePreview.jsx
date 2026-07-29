@@ -52,9 +52,9 @@ const ResumePreview = ({
     <div 
       onClick={(e) => onElementClick && onElementClick(e)}
       style={{ fontSize: `${baseFontSize}px` }}
-      className="w-full h-auto min-h-0 bg-white text-left box-border p-6 shadow-xs select-text cursor-pointer"
+      className="w-full h-auto min-h-0 bg-white text-left box-border select-text cursor-pointer"
     >
-        {renderTemplate()}
+      {renderTemplate()}
     </div>
   );
 };

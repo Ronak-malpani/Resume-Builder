@@ -32,12 +32,14 @@ const ResumeBuilder = () => {
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.55);
+  const [previewHeight, setPreviewHeight] = useState(1123);
 
   // Exact Numeric Font Size State
   const [fontSize, setFontSize] = useState(12);
   const [selectedTarget, setSelectedTarget] = useState(null);
 
   const previewBoxRef = useRef(null);
+  const previewContentRef = useRef(null);
 
   const fontSizesList = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 50];
 
@@ -52,22 +54,26 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Precision scaling calculation for right preview box
+  // Precision scale & height calculation
   useEffect(() => {
-    const updateScale = () => {
+    const updateDimensions = () => {
       if (!previewBoxRef.current) return;
       const { clientWidth } = previewBoxRef.current;
       if (clientWidth === 0) return;
 
-      // Fit preview to exact width of right container
       const scale = clientWidth / 794; 
-      setPreviewScale(Math.min(Math.max(scale, 0.45), 0.95));
+      const clampedScale = Math.min(Math.max(scale, 0.45), 0.95);
+      setPreviewScale(clampedScale);
+
+      if (previewContentRef.current) {
+        setPreviewHeight(previewContentRef.current.offsetHeight || 1123);
+      }
     };
 
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
-  }, [resumeData]);
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [resumeData, debouncedResumeData, fontSize]);
 
   useEffect(() => {
     const loadResume = async () => {
@@ -173,6 +179,7 @@ const ResumeBuilder = () => {
       clone.style.position = "absolute";
       clone.style.left = "-9999px";
       clone.style.top = "0px";
+      clone.style.marginBottom = "0px";
       document.body.appendChild(clone);
 
       const opt = {
@@ -226,7 +233,7 @@ const ResumeBuilder = () => {
       {/* Main Layout Grid */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full max-w-[1440px] mx-auto">
         
-        {/* === LEFT SIDE: FORM EDITOR & RICH TOOLBAR (Takes 7 cols) === */}
+        {/* === LEFT SIDE: FORM EDITOR & RICH TOOLBAR === */}
         <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden">
           
           {/* Header Controls & Rich Formatting Toolbar */}
@@ -306,19 +313,21 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT SIDE: PREVIEW (Takes 5 cols, centered, no weird boxes) === */}
+        {/* === RIGHT SIDE: PREVIEW === */}
         <div 
           ref={previewBoxRef}
-          className="lg:col-span-5 w-full flex justify-center items-start sticky top-4"
+          className="lg:col-span-5 w-full flex justify-center items-start sticky top-4 overflow-hidden"
         >
           <div 
             id="resume-preview-id"
+            ref={previewContentRef}
             style={{
               width: '794px',
               transform: `scale(${previewScale})`,
-              transformOrigin: 'top center'
+              transformOrigin: 'top center',
+              marginBottom: `-${previewHeight * (1 - previewScale)}px`
             }}
-            className="bg-white shadow-xl border border-slate-200 rounded-sm"
+            className="bg-white shadow-md border border-slate-200 rounded-xs shrink-0"
           >
              {debouncedResumeData && (
                <ResumePreview 
