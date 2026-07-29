@@ -61,8 +61,8 @@ const ResumeBuilder = () => {
       const { clientWidth } = previewBoxRef.current;
       if (clientWidth === 0) return;
 
-      const scale = clientWidth / 794; // Exact A4 width in px
-      const clampedScale = Math.min(Math.max(scale, 0.25), 0.85);
+      const scale = clientWidth / 794; // 794px standard A4 width
+      const clampedScale = Math.min(Math.max(scale, 0.25), 0.75);
       setPreviewScale(clampedScale);
 
       if (previewContentRef.current) {
@@ -165,7 +165,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // FIX: Export via Off-Screen 100% Unscaled Clone to prevent text shift / horizontal cutoff
+  // PDF Export using isolated off-screen unscaled clone
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -174,7 +174,6 @@ const ResumeBuilder = () => {
       toast.success("Downloading PDF...");
       await document.fonts.ready;
 
-      // Clone element off-screen without any CSS transform applied
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
@@ -232,7 +231,7 @@ const ResumeBuilder = () => {
       </div>
 
       {/* Main Layout Grid */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start max-w-[1600px] mx-auto w-full">
         
         {/* === LEFT SIDE: FORM EDITOR & RICH TOOLBAR === */}
         <div className="bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden">
@@ -282,7 +281,7 @@ const ResumeBuilder = () => {
             </div>
           </div>
 
-          {/* Form Content - Clean Default Styling */}
+          {/* Form Content */}
           <div className="p-4">
              {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
              {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
@@ -314,18 +313,18 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT SIDE: EXACT FITTED PREVIEW === */}
+        {/* === RIGHT SIDE: CLEAN STANDALONE PAPER PREVIEW === */}
         <div 
           ref={previewBoxRef}
           className="w-full flex justify-center items-start sticky top-4"
         >
-          {/* Scaled Layout Wrapper with explicit width & height */}
+          {/* Scaled paper viewport - zero extra borders/boxes */}
           <div 
             style={{
               width: `${794 * previewScale}px`,
               height: `${previewHeight}px`
             }}
-            className="relative overflow-hidden transition-all duration-75"
+            className="relative overflow-hidden transition-all duration-100 flex justify-center"
           >
             <div 
               id="resume-preview-id"
@@ -333,9 +332,9 @@ const ResumeBuilder = () => {
               style={{
                 width: '794px',
                 transform: `scale(${previewScale})`,
-                transformOrigin: 'top left'
+                transformOrigin: 'top center'
               }}
-              className="bg-white shadow-md border border-slate-200 rounded-sm overflow-hidden"
+              className="bg-white shadow-lg border border-slate-200 rounded-xs overflow-hidden"
             >
                {debouncedResumeData && (
                  <ResumePreview 
