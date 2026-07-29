@@ -59,8 +59,8 @@ const ResumeBuilder = () => {
       const { clientWidth } = previewBoxRef.current;
       if (clientWidth === 0) return;
 
-      const availableWidth = clientWidth - 24;
-      const scale = availableWidth / 794;
+      const availableWidth = clientWidth;
+      const scale = availableWidth / 794; // 794px is exact 210mm standard A4 width
       setPreviewScale(Math.min(Math.max(scale, 0.25), 0.85));
     };
 
@@ -298,7 +298,7 @@ const ResumeBuilder = () => {
           </div>
         </div>
 
-        {/* === RIGHT SIDE: CLICKABLE PREVIEW BOX === */}
+        {/* === RIGHT SIDE: CLEAN FITTED PREVIEW === */}
         <div 
           ref={previewBoxRef}
           className="w-full flex justify-center items-start sticky top-4 overflow-hidden"
@@ -310,11 +310,11 @@ const ResumeBuilder = () => {
               transform: `scale(${previewScale})`,
               transformOrigin: 'top center'
             }}
-            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start"
+            className="shrink-0 transition-transform duration-75 ease-out flex justify-center items-start origin-top"
           >
             <div 
               id="resume-preview-id" 
-              className="w-full h-auto bg-white rounded-md border border-slate-200 shadow-md overflow-hidden"
+              className="w-full h-auto bg-white shadow-md border border-slate-200 rounded-sm overflow-hidden"
             >
                {debouncedResumeData && (
                  <ResumePreview 
