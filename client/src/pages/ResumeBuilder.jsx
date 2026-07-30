@@ -201,7 +201,7 @@ const ResumeBuilder = () => {
     setResumeData(prev => ({ ...prev, public: !prev?.public }));
   };
 
-  // 4. BULLETPROOF PDF EXPORT (Fixes text cutoff & bottom whitespace)
+  // 4. BULLETPROOF PDF EXPORT
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -236,7 +236,7 @@ const ResumeBuilder = () => {
       clone.style.boxShadow = "none";
       clone.style.overflow = "hidden";
 
-      // 3. Apply maximum width and box-sizing constraint to all cloned children
+      // 3. Apply maximum width & box-sizing to all nested elements inside clone
       const allElements = clone.querySelectorAll('*');
       allElements.forEach((el) => {
         el.style.maxWidth = '100%';
@@ -249,18 +249,18 @@ const ResumeBuilder = () => {
       // Brief delay for font & layout reflow
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // 4. Measure exact inner content height
+      // 4. Measure exact content height
       const innerContent = clone.firstElementChild || clone;
       const contentHeight = Math.ceil(innerContent.scrollHeight || clone.getBoundingClientRect().height);
 
-      // 5. Render canvas snapshot with Desktop Viewport context
+      // 5. Render canvas snapshot with standard viewport width
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         logging: false,
         width: 794,
         height: contentHeight,
-        windowWidth: 1200, // Keeps flex elements from collapsing on small viewports
+        windowWidth: 1200,
         scrollX: 0,
         scrollY: 0
       });
@@ -406,26 +406,31 @@ const ResumeBuilder = () => {
           ref={previewBoxRef}
           className="lg:col-span-5 w-full flex justify-center items-start sticky top-4 overflow-hidden"
         >
+          {/* SCALING CONTAINER */}
           <div 
-            id="resume-preview-id"
-            ref={previewContentRef}
-            onClick={handlePreviewClick}
+            className="w-[794px] min-w-[794px] shrink-0"
             style={{
-              width: '794px',
               transform: `scale(${previewScale})`,
               transformOrigin: 'top center',
               marginBottom: previewHeight ? `-${previewHeight * (1 - previewScale)}px` : '0px'
             }}
-            className="bg-white shadow-md border border-slate-200 rounded-xs shrink-0 cursor-pointer h-fit min-h-0 overflow-hidden box-border"
           >
-             {debouncedResumeData && (
-               <ResumePreview 
-                   data={debouncedResumeData} 
-                   template={debouncedResumeData?.template || 'classic'} 
-                   accentColor={debouncedResumeData?.accent_color}
-                   baseFontSize={fontSize}
-               />
-             )}
+            {/* EXACT UNALTERED 794px PREVIEW NODE */}
+            <div 
+              id="resume-preview-id"
+              ref={previewContentRef}
+              onClick={handlePreviewClick}
+              className="bg-white shadow-md border border-slate-200 rounded-xs cursor-pointer h-fit min-h-0 overflow-hidden box-border w-[794px] min-w-[794px] max-w-[794px]"
+            >
+               {debouncedResumeData && (
+                 <ResumePreview 
+                     data={debouncedResumeData} 
+                     template={debouncedResumeData?.template || 'classic'} 
+                     accentColor={debouncedResumeData?.accent_color}
+                     baseFontSize={fontSize}
+                 />
+               )}
+            </div>
           </div>
         </div>
 
