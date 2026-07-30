@@ -36,8 +36,8 @@ const ClassicTemplate = ({ data, accentColor }) => {
     const hasEducation = data.education && data.education.length > 0 && data.education.some(edu => edu.institution?.trim());
 
     return (
-        // A4 CONTAINER (using wrap-break-word)
-        <div className="w-[210mm] min-h-[297mm] mx-auto px-8 py-10 bg-white text-gray-800 shadow-lg font-serif print:shadow-none overflow-hidden wrap-break-word">
+        // A4 CONTAINER (using h-auto to dynamically collapse around content)
+        <div className="w-[210mm] h-auto mx-auto px-8 py-10 bg-white text-gray-800 shadow-lg font-serif print:shadow-none overflow-hidden wrap-break-word">
             
             {/* HEADER SECTION */}
             <header className="text-center mb-6 pb-4 border-b-2" style={{ borderColor: accentColor }}>
