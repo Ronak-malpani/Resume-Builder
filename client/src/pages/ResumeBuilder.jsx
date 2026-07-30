@@ -202,6 +202,7 @@ const ResumeBuilder = () => {
   };
 
   // 4. FIXED PDF EXPORT: Works reliably on Desktop & Mobile browsers
+// 4. FIXED PDF EXPORT: Enforces Single-Page A4 Proportion
 const downloadResume = async () => {
   const element = document.getElementById("resume-preview-id");
   if (!element) return toast.error("Preview not ready");
@@ -212,12 +213,14 @@ const downloadResume = async () => {
   try {
     await document.fonts.ready;
 
-    // 1. Create off-screen container for rendering
+    // 1. Create off-screen A4 container (794px x 1123px is standard 96 DPI A4)
     const container = document.createElement("div");
     container.style.position = "fixed";
     container.style.top = "0";
     container.style.left = "0";
-    container.style.width = "794px"; // Standard A4 width at 96 DPI
+    container.style.width = "794px"; 
+    container.style.minHeight = "1123px"; 
+    container.style.backgroundColor = "#ffffff";
     container.style.zIndex = "-9999";
     container.style.opacity = "0";
     container.style.pointerEvents = "none";
@@ -225,24 +228,26 @@ const downloadResume = async () => {
     const clone = element.cloneNode(true);
     clone.style.transform = "none";
     clone.style.width = "794px";
+    clone.style.minHeight = "1123px";
     clone.style.margin = "0";
     
     container.appendChild(clone);
     document.body.appendChild(container);
 
-    // 2. Render with html2canvas-pro (native OKLCH support!)
+    // 2. Render with html2canvas-pro
     const canvas = await html2canvas(clone, {
       scale: 2,
       useCORS: true,
       logging: false,
       width: 794,
+      height: Math.max(clone.offsetHeight, 1123), 
       windowWidth: 1200
     });
 
-    // Clean up container immediately after capture
+    // Clean up container
     document.body.removeChild(container);
 
-    // 3. Convert Canvas to A4 PDF using jsPDF
+    // 3. Convert Canvas to Exact A4 PDF
     const imgData = canvas.toDataURL('image/jpeg', 0.98);
     const pdf = new jsPDF({
       orientation: 'portrait',
@@ -250,9 +255,10 @@ const downloadResume = async () => {
       format: 'a4'
     });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width; // Height proportional to content
+    const pdfWidth = pdf.internal.pageSize.getWidth();   // 210mm
+    const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
 
+    // Force image to fit the 210mm x 297mm page cleanly
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
     pdf.save(`${resumeData?.personal_info?.full_name || 'Resume'}.pdf`);
 
@@ -264,27 +270,6 @@ const downloadResume = async () => {
     setIsDownloading(false);
   }
 };
-  const toggleVisibility = async () => {
-    const newStatus = !resumeData.public;
-    try {
-        setResumeData(prev => ({ ...prev, public: newStatus }));
-        await api.put('/api/resumes/update', { 
-            resumeId, 
-            resumeData: { public: newStatus } 
-        }, { headers: { Authorization: token } });
-        toast.success(newStatus ? "Resume is now Public" : "Resume is now Private");
-    } catch (e) {
-        toast.error("Update failed");
-    }
-  };
-
-  if (!resumeData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-slate-500">
-        <Loader2 className="animate-spin mr-2" /> Loading Resume...
-      </div>
-    );
-  }
 
   return (
     <div className="w-full min-h-screen bg-slate-50 flex flex-col p-3 lg:p-4">
