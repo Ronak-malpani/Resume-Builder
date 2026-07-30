@@ -212,7 +212,7 @@ const ResumeBuilder = () => {
     try {
       await document.fonts.ready;
 
-      // 1. Off-screen container setup
+      // 1. Isolated off-screen container
       const container = document.createElement("div");
       container.style.position = "fixed";
       container.style.top = "0";
@@ -226,6 +226,7 @@ const ResumeBuilder = () => {
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
+      clone.style.minWidth = "794px";
       clone.style.maxWidth = "794px";
       clone.style.height = "auto";
       clone.style.minHeight = "0px";
@@ -236,38 +237,31 @@ const ResumeBuilder = () => {
       clone.style.boxShadow = "none";
       clone.style.overflow = "hidden";
 
-      // 3. Apply maximum width & box-sizing to all nested elements inside clone
-      const allElements = clone.querySelectorAll('*');
-      allElements.forEach((el) => {
-        el.style.maxWidth = '100%';
-        el.style.boxSizing = 'border-box';
-      });
-
       container.appendChild(clone);
       document.body.appendChild(container);
 
-      // Brief delay for font & layout reflow
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Delay for DOM reflow
+      await new Promise(resolve => setTimeout(resolve, 150));
 
-      // 4. Measure exact content height
-      const innerContent = clone.firstElementChild || clone;
-      const contentHeight = Math.ceil(innerContent.scrollHeight || clone.getBoundingClientRect().height);
+      // 3. Precise content height calculation
+      const contentHeight = Math.ceil(clone.scrollHeight || clone.getBoundingClientRect().height);
 
-      // 5. Render canvas snapshot with standard viewport width
+      // 4. Render canvas with exact matching width and window bounds
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         logging: false,
         width: 794,
         height: contentHeight,
-        windowWidth: 1200,
+        windowWidth: 794,   // Strictly set to 794px to match capture width
+        windowHeight: contentHeight,
         scrollX: 0,
         scrollY: 0
       });
 
       document.body.removeChild(container);
 
-      // 6. Generate mm-proportional PDF document
+      // 5. Generate mm-proportional PDF
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
       const pdfWidth = 210; // Standard A4 width in mm
       const pdfHeight = (contentHeight * pdfWidth) / 794;
@@ -406,7 +400,7 @@ const ResumeBuilder = () => {
           ref={previewBoxRef}
           className="lg:col-span-5 w-full flex justify-center items-start sticky top-4 overflow-hidden"
         >
-          {/* SCALING CONTAINER */}
+          {/* SCALE WRAPPER */}
           <div 
             className="w-[794px] min-w-[794px] shrink-0"
             style={{
@@ -415,7 +409,7 @@ const ResumeBuilder = () => {
               marginBottom: previewHeight ? `-${previewHeight * (1 - previewScale)}px` : '0px'
             }}
           >
-            {/* EXACT UNALTERED 794px PREVIEW NODE */}
+            {/* EXACT 794px PREVIEW NODE */}
             <div 
               id="resume-preview-id"
               ref={previewContentRef}
