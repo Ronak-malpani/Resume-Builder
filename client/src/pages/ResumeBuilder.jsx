@@ -102,11 +102,10 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // 1. FIXED FORMATTING FUNCTION: Target inline selection or direct clicked target node
+  // 1. FIXED FORMATTING FUNCTION
   const applyTextFormat = (command) => {
     const selection = window.getSelection();
     
-    // Case A: User highlighted specific text inside the preview
     if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
       const range = selection.getRangeAt(0);
       const span = document.createElement('span');
@@ -119,11 +118,9 @@ const ResumeBuilder = () => {
         range.surroundContents(span);
         selection.removeAllRanges();
       } catch (err) {
-        // Fallback if range crosses multiple nodes
         document.execCommand(command, false, null);
       }
     } 
-    // Case B: User clicked a specific node directly
     else if (selectedTarget) {
       if (command === 'bold') {
         selectedTarget.style.fontWeight = selectedTarget.style.fontWeight === 'bold' ? 'normal' : 'bold';
@@ -139,7 +136,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 2. FIXED TARGETING: Click directly on specific text elements (GPA, Degree, Company Name, etc.)
+  // 2. FIXED TARGETING
   const handlePreviewClick = (e) => {
     e.stopPropagation();
     const clickedElement = e.target;
@@ -147,7 +144,6 @@ const ResumeBuilder = () => {
     if (clickedElement) {
       setSelectedTarget(clickedElement);
       
-      // Auto switch editor tab if section header clicked
       const text = clickedElement.innerText?.toLowerCase() || '';
       if (text.includes('summary')) setActiveSectionIndex(1);
       else if (text.includes('experience')) setActiveSectionIndex(2);
@@ -157,7 +153,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 3. ADJUST FONT SIZE FOR SPECIFIC SELECTED TEXT
+  // 3. ADJUST FONT SIZE
   const adjustFontSize = (delta) => {
     if (selectedTarget) {
       const computedSize = parseFloat(window.getComputedStyle(selectedTarget).fontSize);
@@ -201,75 +197,83 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 4. FIXED PDF EXPORT: Works reliably on Desktop & Mobile browsers
-// 4. FIXED PDF EXPORT: Enforces Single-Page A4 Proportion
-const downloadResume = async () => {
-  const element = document.getElementById("resume-preview-id");
-  if (!element) return toast.error("Preview not ready");
-  
-  setIsDownloading(true);
-  const toastId = toast.loading("Generating PDF...");
+  const toggleVisibility = () => {
+    setResumeData(prev => ({ ...prev, public: !prev?.public }));
+  };
 
-  try {
-    await document.fonts.ready;
-
-    // 1. Create off-screen A4 container (794px x 1123px is standard 96 DPI A4)
-    const container = document.createElement("div");
-    container.style.position = "fixed";
-    container.style.top = "0";
-    container.style.left = "0";
-    container.style.width = "794px"; 
-    container.style.minHeight = "1123px"; 
-    container.style.backgroundColor = "#ffffff";
-    container.style.zIndex = "-9999";
-    container.style.opacity = "0";
-    container.style.pointerEvents = "none";
-
-    const clone = element.cloneNode(true);
-    clone.style.transform = "none";
-    clone.style.width = "794px";
-    clone.style.minHeight = "1123px";
-    clone.style.margin = "0";
+  // 4. FIXED PDF EXPORT
+  const downloadResume = async () => {
+    const element = document.getElementById("resume-preview-id");
+    if (!element) return toast.error("Preview not ready");
     
-    container.appendChild(clone);
-    document.body.appendChild(container);
+    setIsDownloading(true);
+    const toastId = toast.loading("Generating PDF...");
 
-    // 2. Render with html2canvas-pro
-    const canvas = await html2canvas(clone, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      width: 794,
-      height: Math.max(clone.offsetHeight, 1123), 
-      windowWidth: 1200
-    });
+    try {
+      await document.fonts.ready;
 
-    // Clean up container
-    document.body.removeChild(container);
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.width = "794px"; 
+      container.style.minHeight = "1123px"; 
+      container.style.backgroundColor = "#ffffff";
+      container.style.zIndex = "-9999";
+      container.style.opacity = "0";
+      container.style.pointerEvents = "none";
 
-    // 3. Convert Canvas to Exact A4 PDF
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
+      const clone = element.cloneNode(true);
+      clone.style.transform = "none";
+      clone.style.width = "794px";
+      clone.style.minHeight = "1123px";
+      clone.style.margin = "0";
+      
+      container.appendChild(clone);
+      document.body.appendChild(container);
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();   // 210mm
-    const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: 794,
+        height: Math.max(clone.offsetHeight, 1123), 
+        windowWidth: 1200
+      });
 
-    // Force image to fit the 210mm x 297mm page cleanly
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`${resumeData?.personal_info?.full_name || 'Resume'}.pdf`);
+      document.body.removeChild(container);
 
-    toast.success("Downloaded successfully!", { id: toastId });
-  } catch (e) {
-    console.error("PDF Export Error:", e);
-    toast.error("Download failed. Please try again.", { id: toastId });
-  } finally {
-    setIsDownloading(false);
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();   // 210mm
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${resumeData?.personal_info?.full_name || 'Resume'}.pdf`);
+
+      toast.success("Downloaded successfully!", { id: toastId });
+    } catch (e) {
+      console.error("PDF Export Error:", e);
+      toast.error("Download failed. Please try again.", { id: toastId });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Loading Guard
+  if (!resumeData) {
+    return (
+      <div className="w-full h-screen flex flex-col items-center justify-center gap-3 bg-slate-50">
+        <Loader2 className="animate-spin text-green-600" size={32} />
+        <p className="text-slate-500 text-sm font-medium">Loading your resume...</p>
+      </div>
+    );
   }
-};
 
   return (
     <div className="w-full min-h-screen bg-slate-50 flex flex-col p-3 lg:p-4">
@@ -290,8 +294,8 @@ const downloadResume = async () => {
           {/* Header Controls & Rich Formatting Toolbar */}
           <div className="p-2 border-b border-slate-100 flex flex-wrap justify-between items-center gap-2 shrink-0 bg-slate-50/50">
             <div className="flex items-center gap-1.5 flex-wrap">
-               <TemplateSelector selectedTemplate={resumeData.template} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
-               <Colorpicker selectedColor={resumeData.accent_color} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
+               <TemplateSelector selectedTemplate={resumeData?.template || 'classic'} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
+               <Colorpicker selectedColor={resumeData?.accent_color || '#000000'} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
                
                {/* BOLD / ITALIC / UNDERLINE CONTROLS */}
                <div className="flex items-center bg-white p-0.5 rounded-md border border-slate-200 text-xs shadow-2xs">
@@ -338,12 +342,12 @@ const downloadResume = async () => {
 
           {/* Form Content */}
           <div className="p-4">
-             {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
-             {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
-             {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
-             {activeSection.id === 'education' && <EducationForm data={resumeData.education || []} onChange={(d) => handleDataChange('education', d)} />}
-             {activeSection.id === 'projects' && <ProjectForm data={resumeData.project || []} onChange={(d) => handleDataChange('project', d)} />}
-             {activeSection.id === 'skills' && <SkillsForm data={resumeData.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
+             {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData?.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
+             {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData?.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
+             {activeSection.id === 'experience' && <ExperienceForm data={resumeData?.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
+             {activeSection.id === 'education' && <EducationForm data={resumeData?.education || []} onChange={(d) => handleDataChange('education', d)} />}
+             {activeSection.id === 'projects' && <ProjectForm data={resumeData?.project || []} onChange={(d) => handleDataChange('project', d)} />}
+             {activeSection.id === 'skills' && <SkillsForm data={resumeData?.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
           </div>
 
           {/* Footer Actions */}
@@ -355,10 +359,10 @@ const downloadResume = async () => {
             <div className="grid grid-cols-2 gap-2">
               <button 
                 onClick={toggleVisibility} 
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold border transition-all ${resumeData.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold border transition-all ${resumeData?.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
               >
-                  {resumeData.public ? <EyeIcon size={14}/> : <EyeOffIcon size={14}/>}
-                  {resumeData.public ? "Public" : "Private"}
+                  {resumeData?.public ? <EyeIcon size={14}/> : <EyeOffIcon size={14}/>}
+                  {resumeData?.public ? "Public" : "Private"}
               </button>
 
               <button 
@@ -392,8 +396,8 @@ const downloadResume = async () => {
              {debouncedResumeData && (
                <ResumePreview 
                    data={debouncedResumeData} 
-                   template={debouncedResumeData.template} 
-                   accentColor={debouncedResumeData.accent_color}
+                   template={debouncedResumeData?.template || 'classic'} 
+                   accentColor={debouncedResumeData?.accent_color}
                    baseFontSize={fontSize}
                />
              )}
