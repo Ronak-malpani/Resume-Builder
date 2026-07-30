@@ -31,6 +31,7 @@ const ResumeBuilder = () => {
   const [debouncedResumeData, setDebouncedResumeData] = useState(null);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.55);
   const [previewHeight, setPreviewHeight] = useState(1123);
 
@@ -100,17 +101,52 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // Handle direct text formatting commands (Bold, Italic, Underline)
-  const applyTextFormat = (command, value = null) => {
-    document.execCommand(command, false, value);
+  // 1. FIXED FORMATTING FUNCTION: Target inline selection or direct clicked target node
+  const applyTextFormat = (command) => {
+    const selection = window.getSelection();
+    
+    // Case A: User highlighted specific text inside the preview
+    if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+      const range = selection.getRangeAt(0);
+      const span = document.createElement('span');
+      
+      if (command === 'bold') span.style.fontWeight = 'bold';
+      if (command === 'italic') span.style.fontStyle = 'italic';
+      if (command === 'underline') span.style.textDecoration = 'underline';
+      
+      try {
+        range.surroundContents(span);
+        selection.removeAllRanges();
+      } catch (err) {
+        // Fallback if range crosses multiple nodes
+        document.execCommand(command, false, null);
+      }
+    } 
+    // Case B: User clicked a specific node directly
+    else if (selectedTarget) {
+      if (command === 'bold') {
+        selectedTarget.style.fontWeight = selectedTarget.style.fontWeight === 'bold' ? 'normal' : 'bold';
+      }
+      if (command === 'italic') {
+        selectedTarget.style.fontStyle = selectedTarget.style.fontStyle === 'italic' ? 'normal' : 'italic';
+      }
+      if (command === 'underline') {
+        selectedTarget.style.textDecoration = selectedTarget.style.textDecoration === 'underline' ? 'none' : 'underline';
+      }
+    } else {
+      toast.error("Please click or select specific text in the preview first.");
+    }
   };
 
-  // Handle clicking on specific elements in preview
+  // 2. FIXED TARGETING: Click directly on specific text elements (GPA, Degree, Company Name, etc.)
   const handlePreviewClick = (e) => {
+    e.stopPropagation();
     const clickedElement = e.target;
+    
     if (clickedElement) {
       setSelectedTarget(clickedElement);
       
+      // Auto switch editor tab if section header clicked
       const text = clickedElement.innerText?.toLowerCase() || '';
       if (text.includes('summary')) setActiveSectionIndex(1);
       else if (text.includes('experience')) setActiveSectionIndex(2);
@@ -120,14 +156,14 @@ const ResumeBuilder = () => {
     }
   };
 
-  // Increase / Decrease selected element or whole document size
+  // 3. ADJUST FONT SIZE FOR SPECIFIC SELECTED TEXT
   const adjustFontSize = (delta) => {
     if (selectedTarget) {
-      const currentSize = parseInt(window.getComputedStyle(selectedTarget).fontSize) || fontSize;
-      const newSize = Math.min(Math.max(currentSize + delta, 10), 50);
+      const computedSize = parseFloat(window.getComputedStyle(selectedTarget).fontSize);
+      const newSize = Math.min(Math.max(computedSize + delta, 8), 50);
       selectedTarget.style.fontSize = `${newSize}px`;
     } else {
-      setFontSize(prev => Math.min(Math.max(prev + delta, 10), 50));
+      setFontSize(prev => Math.min(Math.max(prev + delta, 8), 50));
     }
   };
 
@@ -164,37 +200,58 @@ const ResumeBuilder = () => {
     }
   };
 
-  // PDF Export via Off-Screen 100% Unscaled Clone
+  // 4. FIXED PDF EXPORT: Works reliably on Desktop & Mobile browsers
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
     
+    setIsDownloading(true);
+    const toastId = toast.loading("Generating PDF...");
+
     try {
-      toast.success("Downloading PDF...");
       await document.fonts.ready;
+
+      // Create a clean off-screen container that mobile engines won't clip
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.width = "794px";
+      container.style.zIndex = "-9999";
+      container.style.opacity = "0";
+      container.style.pointerEvents = "none";
 
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
-      clone.style.position = "absolute";
-      clone.style.left = "-9999px";
-      clone.style.top = "0px";
-      clone.style.marginBottom = "0px";
-      document.body.appendChild(clone);
+      clone.style.margin = "0";
+      
+      container.appendChild(clone);
+      document.body.appendChild(container);
 
       const opt = {
         margin: 0,
         filename: `${resumeData?.personal_info?.full_name || 'Resume'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          logging: false,
+          windowWidth: 1200
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
+      // Generate & save
       await html2pdf().set(opt).from(clone).save();
-      document.body.removeChild(clone);
+      
+      document.body.removeChild(container);
+      toast.success("Downloaded successfully!", { id: toastId });
     } catch (e) {
       console.error(e);
-      toast.error("Download failed");
+      toast.error("Download failed. Please try again.", { id: toastId });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -255,12 +312,16 @@ const ResumeBuilder = () => {
                   </button>
                </div>
 
-               {/* NUMERIC FONT SIZE SELECTOR (10 to 50) */}
+               {/* NUMERIC FONT SIZE SELECTOR */}
                <div className="flex items-center bg-white p-0.5 rounded-md border border-slate-200 text-xs shadow-2xs">
                   <Type size={13} className="text-slate-400 mx-1" />
                   <select 
                     value={fontSize} 
-                    onChange={(e) => setFontSize(Number(e.target.value))}
+                    onChange={(e) => {
+                      const newSz = Number(e.target.value);
+                      setFontSize(newSz);
+                      if (selectedTarget) selectedTarget.style.fontSize = `${newSz}px`;
+                    }}
                     className="bg-transparent font-semibold text-slate-700 outline-none text-xs cursor-pointer py-0.5"
                   >
                     {fontSizesList.map(sz => (
@@ -306,8 +367,12 @@ const ResumeBuilder = () => {
                   {resumeData.public ? "Public" : "Private"}
               </button>
 
-              <button onClick={downloadResume} className="flex items-center justify-center gap-1.5 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition-all">
-                  <DownloadIcon size={14}/> Download PDF
+              <button 
+                onClick={downloadResume} 
+                disabled={isDownloading} 
+                className="flex items-center justify-center gap-1.5 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition-all disabled:opacity-50"
+              >
+                  {isDownloading ? <Loader2 className="animate-spin" size={14} /> : <DownloadIcon size={14}/>} Download PDF
               </button>
             </div>
           </div>
@@ -321,13 +386,14 @@ const ResumeBuilder = () => {
           <div 
             id="resume-preview-id"
             ref={previewContentRef}
+            onClick={handlePreviewClick}
             style={{
               width: '794px',
               transform: `scale(${previewScale})`,
               transformOrigin: 'top center',
               marginBottom: `-${previewHeight * (1 - previewScale)}px`
             }}
-            className="bg-white shadow-md border border-slate-200 rounded-xs shrink-0"
+            className="bg-white shadow-md border border-slate-200 rounded-xs shrink-0 cursor-pointer"
           >
              {debouncedResumeData && (
                <ResumePreview 
@@ -335,7 +401,6 @@ const ResumeBuilder = () => {
                    template={debouncedResumeData.template} 
                    accentColor={debouncedResumeData.accent_color}
                    baseFontSize={fontSize}
-                   onElementClick={handlePreviewClick}
                />
              )}
           </div>
