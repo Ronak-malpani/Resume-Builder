@@ -17,10 +17,10 @@ const ResumePreview = ({
   const sanitizedData = useMemo(() => ({
     ...data,
     personal_info: {
-      ...data.personal_info,
-      linkedin: data.personal_info?.linkedin?.replace("linked:", "")
+      ...data?.personal_info,
+      linkedin: data?.personal_info?.linkedin?.replace("linked:", "")
     },
-    experience: Array.isArray(data.experience)
+    experience: Array.isArray(data?.experience)
       ? data.experience.map(exp => ({
           title: exp.title || exp.position || "",
           company: exp.company || "",
@@ -29,13 +29,13 @@ const ResumePreview = ({
           description: exp.description || ""
         }))
       : [],
-    project: Array.isArray(data.project)
+    project: Array.isArray(data?.project)
       ? data.project.map(proj => ({
           ...proj,
           description: proj.description || ""
         }))
       : [],
-    education: Array.isArray(data.education) ? data.education : []
+    education: Array.isArray(data?.education) ? data.education : []
   }), [data]);
 
   const renderTemplate = () => {
@@ -52,7 +52,7 @@ const ResumePreview = ({
     <div 
       onClick={(e) => onElementClick && onElementClick(e)}
       style={{ fontSize: `${baseFontSize}px` }}
-      className="w-full h-fit min-h-0 bg-white text-left box-border select-text cursor-pointer"
+      className="w-full h-fit min-h-0 bg-white text-left box-border select-text cursor-pointer overflow-hidden break-words"
     >
       {renderTemplate()}
     </div>

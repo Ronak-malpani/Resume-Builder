@@ -102,7 +102,7 @@ const ResumeBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData]);
 
-  // 1. FIXED FORMATTING FUNCTION
+  // 1. TEXT FORMATTING FUNCTION
   const applyTextFormat = (command) => {
     const selection = window.getSelection();
     
@@ -136,7 +136,7 @@ const ResumeBuilder = () => {
     }
   };
 
-  // 2. FIXED TARGETING
+  // 2. PREVIEW TARGETING
   const handlePreviewClick = (e) => {
     e.stopPropagation();
     const clickedElement = e.target;
@@ -202,7 +202,6 @@ const ResumeBuilder = () => {
   };
 
   // 4. BULLETPROOF PDF EXPORT (Fixes text cutoff & bottom whitespace)
- // 4. BULLETPROOF PDF EXPORT
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -213,7 +212,7 @@ const ResumeBuilder = () => {
     try {
       await document.fonts.ready;
 
-      // 1. Off-screen container
+      // 1. Off-screen container setup
       const container = document.createElement("div");
       container.style.position = "fixed";
       container.style.top = "0";
@@ -221,45 +220,57 @@ const ResumeBuilder = () => {
       container.style.width = "794px"; 
       container.style.backgroundColor = "#ffffff";
       container.style.zIndex = "-9999";
+      container.style.overflow = "hidden";
 
-      // 2. Clone the element
+      // 2. Clone setup
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
+      clone.style.maxWidth = "794px";
       clone.style.height = "auto";
       clone.style.minHeight = "0px";
       clone.style.margin = "0";
-      clone.style.padding = "0"; // Let inner ResumePreview manage its own internal p-8
+      clone.style.padding = "0";
       clone.style.boxSizing = "border-box";
-      clone.style.border = "none"; // Remove UI preview border from PDF
-      clone.style.boxShadow = "none"; // Remove shadow from PDF output
-      
+      clone.style.border = "none";
+      clone.style.boxShadow = "none";
+      clone.style.overflow = "hidden";
+
+      // 3. Apply maximum width and box-sizing constraint to all cloned children
+      const allElements = clone.querySelectorAll('*');
+      allElements.forEach((el) => {
+        el.style.maxWidth = '100%';
+        el.style.boxSizing = 'border-box';
+      });
+
       container.appendChild(clone);
       document.body.appendChild(container);
 
       // Brief delay for font & layout reflow
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // 3. Measure EXACT content height (target inner child if present)
+      // 4. Measure exact inner content height
       const innerContent = clone.firstElementChild || clone;
       const contentHeight = Math.ceil(innerContent.scrollHeight || clone.getBoundingClientRect().height);
 
-      // 4. Render canvas with Desktop Viewport context
+      // 5. Render canvas snapshot with Desktop Viewport context
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         logging: false,
         width: 794,
         height: contentHeight,
-        windowWidth: 1200 // Prevents Tailwind mobile breakpoint collapses
+        windowWidth: 1200, // Keeps flex elements from collapsing on small viewports
+        scrollX: 0,
+        scrollY: 0
       });
 
       document.body.removeChild(container);
 
-      // 5. Custom mm-proportional PDF document
+      // 6. Generate mm-proportional PDF document
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
       const pdfWidth = 210; // Standard A4 width in mm
-      const pdfHeight = (contentHeight * pdfWidth) / 794; // Scale height proportionally
+      const pdfHeight = (contentHeight * pdfWidth) / 794;
 
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -405,7 +416,7 @@ const ResumeBuilder = () => {
               transformOrigin: 'top center',
               marginBottom: previewHeight ? `-${previewHeight * (1 - previewScale)}px` : '0px'
             }}
-            className="bg-white shadow-md border border-slate-200 rounded-xs shrink-0 cursor-pointer h-fit min-h-0"
+            className="bg-white shadow-md border border-slate-200 rounded-xs shrink-0 cursor-pointer h-fit min-h-0 overflow-hidden box-border"
           >
              {debouncedResumeData && (
                <ResumePreview 
