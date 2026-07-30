@@ -68,7 +68,7 @@ const ResumeBuilder = () => {
       setPreviewScale(clampedScale);
 
       if (previewContentRef.current) {
-        setPreviewHeight(previewContentRef.current.offsetHeight || 1123);
+        setPreviewHeight(previewContentRef.current.offsetHeight || 0);
       }
     };
 
@@ -389,9 +389,9 @@ const ResumeBuilder = () => {
               width: '794px',
               transform: `scale(${previewScale})`,
               transformOrigin: 'top center',
-              marginBottom: `-${previewHeight * (1 - previewScale)}px`
+              marginBottom: previewHeight ? `-${previewHeight * (1 - previewScale)}px` : '0px'
             }}
-            className="bg-white shadow-md border border-slate-200 rounded-xs shrink-0 cursor-pointer"
+            className="bg-white shadow-md border border-slate-200 rounded-xs shrink-0 cursor-pointer h-fit min-h-0"
           >
              {debouncedResumeData && (
                <ResumePreview 
