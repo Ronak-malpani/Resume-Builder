@@ -202,58 +202,76 @@ const ResumeBuilder = () => {
 
   // 4. FIXED PDF EXPORT: Works reliably on Desktop & Mobile browsers
   const downloadResume = async () => {
-    const element = document.getElementById("resume-preview-id");
-    if (!element) return toast.error("Preview not ready");
+  const element = document.getElementById("resume-preview-id");
+  if (!element) return toast.error("Preview not ready");
+  
+  setIsDownloading(true);
+  const toastId = toast.loading("Generating PDF...");
+
+  try {
+    await document.fonts.ready;
+
+    // Create a clean off-screen container for snapshotting
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.top = "0";
+    container.style.left = "0";
+    container.style.width = "794px";
+    container.style.zIndex = "-9999";
+    container.style.opacity = "0";
+    container.style.pointerEvents = "none";
+
+    const clone = element.cloneNode(true);
+    clone.style.transform = "none";
+    clone.style.width = "794px";
+    clone.style.margin = "0";
     
-    setIsDownloading(true);
-    const toastId = toast.loading("Generating PDF...");
+    container.appendChild(clone);
+    document.body.appendChild(container);
 
-    try {
-      await document.fonts.ready;
+    const opt = {
+      margin: 0,
+      filename: `${resumeData?.personal_info?.full_name || 'Resume'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        windowWidth: 1200,
+        // FIX FOR OKLCH ERROR: Convert oklch colors to standard computed RGB before taking snapshot
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById("resume-preview-id");
+          if (!clonedElement) return;
 
-      // Create a clean off-screen container that mobile engines won't clip
-      const container = document.createElement("div");
-      container.style.position = "fixed";
-      container.style.top = "0";
-      container.style.left = "0";
-      container.style.width = "794px";
-      container.style.zIndex = "-9999";
-      container.style.opacity = "0";
-      container.style.pointerEvents = "none";
+          const allElements = clonedElement.querySelectorAll('*');
+          allElements.forEach((el) => {
+            const style = window.getComputedStyle(el);
+            if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
+              el.style.backgroundColor = style.backgroundColor;
+            }
+            if (style.color && style.color.includes('oklch')) {
+              el.style.color = style.color;
+            }
+            if (style.borderColor && style.borderColor.includes('oklch')) {
+              el.style.borderColor = style.borderColor;
+            }
+          });
+        }
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
-      const clone = element.cloneNode(true);
-      clone.style.transform = "none";
-      clone.style.width = "794px";
-      clone.style.margin = "0";
-      
-      container.appendChild(clone);
-      document.body.appendChild(container);
-
-      const opt = {
-        margin: 0,
-        filename: `${resumeData?.personal_info?.full_name || 'Resume'}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
-          logging: false,
-          windowWidth: 1200
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      // Generate & save
-      await html2pdf().set(opt).from(clone).save();
-      
-      document.body.removeChild(container);
-      toast.success("Downloaded successfully!", { id: toastId });
-    } catch (e) {
-      console.error(e);
-      toast.error("Download failed. Please try again.", { id: toastId });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
+    await html2pdf().set(opt).from(clone).save();
+    
+    document.body.removeChild(container);
+    toast.success("Downloaded successfully!", { id: toastId });
+  } catch (e) {
+    console.error(e);
+    toast.error("Download failed. Please try again.", { id: toastId });
+  } finally {
+    setIsDownloading(false);
+  }
+};
 
   const toggleVisibility = async () => {
     const newStatus = !resumeData.public;
