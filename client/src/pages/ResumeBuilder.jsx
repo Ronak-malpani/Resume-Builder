@@ -9,7 +9,7 @@ import { jsPDF } from 'jspdf';
 // Icons
 import { 
   ArrowLeftIcon, ChevronLeft, ChevronRight, 
-  EyeIcon, EyeOffIcon, DownloadIcon, Loader2, Share2Icon, 
+  EyeIcon, EyeOffIcon, DownloadIcon, Loader2, 
   Bold, Italic, Underline, Type, Plus, Minus
 } from 'lucide-react';
 
@@ -201,7 +201,7 @@ const ResumeBuilder = () => {
     setResumeData(prev => ({ ...prev, public: !prev?.public }));
   };
 
-  // 4. FIXED PDF EXPORT
+  // 4. CLEANED DYNAMIC PDF EXPORT
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -217,7 +217,7 @@ const ResumeBuilder = () => {
       container.style.top = "0";
       container.style.left = "0";
       container.style.width = "794px"; 
-      container.style.minHeight = "1123px"; 
+      container.style.minHeight = "0px"; 
       container.style.backgroundColor = "#ffffff";
       container.style.zIndex = "-9999";
       container.style.opacity = "0";
@@ -226,33 +226,39 @@ const ResumeBuilder = () => {
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
-      clone.style.minHeight = "1123px";
+      clone.style.minHeight = "0px";
+      clone.style.height = "auto";
       clone.style.margin = "0";
       
       container.appendChild(clone);
       document.body.appendChild(container);
+
+      // Measure content height dynamically
+      const contentHeight = clone.offsetHeight;
 
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         logging: false,
         width: 794,
-        height: Math.max(clone.offsetHeight, 1123), 
+        height: contentHeight, 
         windowWidth: 1200
       });
 
       document.body.removeChild(container);
 
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
+      const pdfWidth = 210; // Standard A4 width in mm
+      const pxToMm = pdfWidth / 794;
+      const pdfHeight = contentHeight * pxToMm;
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'a4'
+        format: [pdfWidth, pdfHeight]
       });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();   // 210mm
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
-
+      
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${resumeData?.personal_info?.full_name || 'Resume'}.pdf`);
 
