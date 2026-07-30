@@ -201,7 +201,7 @@ const ResumeBuilder = () => {
     setResumeData(prev => ({ ...prev, public: !prev?.public }));
   };
 
-  // 4. CLEANED DYNAMIC PDF EXPORT
+  // 4. BULLETPROOF PDF EXPORT (Fixes text cutoff & bottom whitespace)
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -212,53 +212,57 @@ const ResumeBuilder = () => {
     try {
       await document.fonts.ready;
 
+      // 1. Create temporary container
       const container = document.createElement("div");
       container.style.position = "fixed";
       container.style.top = "0";
-      container.style.left = "0";
+      container.style.left = "-9999px"; // Move off-screen safely
       container.style.width = "794px"; 
-      container.style.minHeight = "0px"; 
       container.style.backgroundColor = "#ffffff";
       container.style.zIndex = "-9999";
-      container.style.opacity = "0";
-      container.style.pointerEvents = "none";
 
+      // 2. Prepare clone
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
-      clone.style.minHeight = "0px";
       clone.style.height = "auto";
+      clone.style.minHeight = "0px";
+      clone.style.maxHeight = "none";
       clone.style.margin = "0";
+      clone.style.padding = "32px"; // Standard print padding (8 in tailwind)
+      clone.style.boxSizing = "border-box"; // Ensures width includes padding so skills don't overflow!
       
       container.appendChild(clone);
       document.body.appendChild(container);
 
-      // Measure content height dynamically
-      const contentHeight = clone.offsetHeight;
+      // 3. Give browser a tick to layout font wrapping
+      await new Promise(resolve => setTimeout(resolve, 50));
 
+      const contentHeight = clone.getBoundingClientRect().height;
+
+      // 4. Capture Canvas
       const canvas = await html2canvas(clone, {
-        scale: 2,
+        scale: 2, // Retain high DPI crispness
         useCORS: true,
         logging: false,
         width: 794,
-        height: contentHeight, 
-        windowWidth: 1200
+        height: contentHeight,
+        windowWidth: 794
       });
 
       document.body.removeChild(container);
 
+      // 5. Build PDF with dynamic content aspect ratio
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-
-      const pdfWidth = 210; // Standard A4 width in mm
-      const pxToMm = pdfWidth / 794;
-      const pdfHeight = contentHeight * pxToMm;
+      const pdfWidth = 210; // 210mm standard A4 width
+      const pdfHeight = (contentHeight * pdfWidth) / 794; // Proportional height in mm
 
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: [pdfWidth, pdfHeight]
       });
-      
+
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${resumeData?.personal_info?.full_name || 'Resume'}.pdf`);
 
