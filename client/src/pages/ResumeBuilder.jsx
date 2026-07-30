@@ -202,6 +202,7 @@ const ResumeBuilder = () => {
   };
 
   // 4. BULLETPROOF PDF EXPORT (Fixes text cutoff & bottom whitespace)
+ // 4. BULLETPROOF PDF EXPORT
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -212,50 +213,53 @@ const ResumeBuilder = () => {
     try {
       await document.fonts.ready;
 
-      // 1. Create temporary container
+      // 1. Off-screen container
       const container = document.createElement("div");
       container.style.position = "fixed";
       container.style.top = "0";
-      container.style.left = "-9999px"; // Move off-screen safely
+      container.style.left = "-9999px";
       container.style.width = "794px"; 
       container.style.backgroundColor = "#ffffff";
       container.style.zIndex = "-9999";
 
-      // 2. Prepare clone
+      // 2. Clone the element
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
       clone.style.height = "auto";
       clone.style.minHeight = "0px";
-      clone.style.maxHeight = "none";
       clone.style.margin = "0";
-      clone.style.padding = "32px"; // Standard print padding (8 in tailwind)
-      clone.style.boxSizing = "border-box"; // Ensures width includes padding so skills don't overflow!
+      clone.style.padding = "0"; // Let inner ResumePreview manage its own internal p-8
+      clone.style.boxSizing = "border-box";
+      clone.style.border = "none"; // Remove UI preview border from PDF
+      clone.style.boxShadow = "none"; // Remove shadow from PDF output
       
       container.appendChild(clone);
       document.body.appendChild(container);
 
-      // 3. Give browser a tick to layout font wrapping
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Brief delay for font & layout reflow
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      const contentHeight = clone.getBoundingClientRect().height;
+      // 3. Measure EXACT content height (target inner child if present)
+      const innerContent = clone.firstElementChild || clone;
+      const contentHeight = Math.ceil(innerContent.scrollHeight || clone.getBoundingClientRect().height);
 
-      // 4. Capture Canvas
+      // 4. Render canvas with Desktop Viewport context
       const canvas = await html2canvas(clone, {
-        scale: 2, // Retain high DPI crispness
+        scale: 2,
         useCORS: true,
         logging: false,
         width: 794,
         height: contentHeight,
-        windowWidth: 794
+        windowWidth: 1200 // Prevents Tailwind mobile breakpoint collapses
       });
 
       document.body.removeChild(container);
 
-      // 5. Build PDF with dynamic content aspect ratio
+      // 5. Custom mm-proportional PDF document
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const pdfWidth = 210; // 210mm standard A4 width
-      const pdfHeight = (contentHeight * pdfWidth) / 794; // Proportional height in mm
+      const pdfWidth = 210; // Standard A4 width in mm
+      const pdfHeight = (contentHeight * pdfWidth) / 794; // Scale height proportionally
 
       const pdf = new jsPDF({
         orientation: 'portrait',
