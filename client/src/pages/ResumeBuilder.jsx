@@ -201,7 +201,7 @@ const ResumeBuilder = () => {
   };
 
   // 4. FIXED PDF EXPORT: Works reliably on Desktop & Mobile browsers
-  const downloadResume = async () => {
+const downloadResume = async () => {
   const element = document.getElementById("resume-preview-id");
   if (!element) return toast.error("Preview not ready");
   
@@ -211,49 +211,70 @@ const ResumeBuilder = () => {
   try {
     await document.fonts.ready;
 
-    // Create a clean off-screen container for snapshotting
+    // 1. Create a isolated wrapper container
     const container = document.createElement("div");
     container.style.position = "fixed";
     container.style.top = "0";
     container.style.left = "0";
-    container.style.width = "794px";
+    container.style.width = "794px"; 
     container.style.zIndex = "-9999";
     container.style.opacity = "0";
     container.style.pointerEvents = "none";
 
     const clone = element.cloneNode(true);
+    
+    // Reset canvas transformation to fit 1:1 in printable A4 container
     clone.style.transform = "none";
     clone.style.width = "794px";
-    clone.style.margin = "0";
+    clone.style.margin = "0 auto";
+    clone.style.boxSizing = "border-box";
     
     container.appendChild(clone);
     document.body.appendChild(container);
 
     const opt = {
-      margin: 0,
+      margin: [0, 0, 0, 0],
       filename: `${resumeData?.personal_info?.full_name || 'Resume'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { 
         scale: 2, 
         useCORS: true, 
         logging: false,
+        width: 794,
         windowWidth: 1200,
-        // FIX FOR OKLCH ERROR: Convert oklch colors to standard computed RGB before taking snapshot
         onclone: (clonedDoc) => {
           const clonedElement = clonedDoc.getElementById("resume-preview-id");
           if (!clonedElement) return;
 
+          // Helper to convert any modern CSS color to strict RGB hex string using browser DOM canvas context
+          const ctx = document.createElement('canvas').getContext('2d');
+          const toSafeColor = (colorStr) => {
+            if (!colorStr || typeof colorStr !== 'string') return '';
+            if (colorStr.includes('oklch') || colorStr.includes('oklab')) {
+              ctx.fillStyle = colorStr;
+              return ctx.fillStyle; 
+            }
+            return colorStr;
+          };
+
           const allElements = clonedElement.querySelectorAll('*');
           allElements.forEach((el) => {
-            const style = window.getComputedStyle(el);
-            if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
-              el.style.backgroundColor = style.backgroundColor;
+            const computedStyle = window.getComputedStyle(el);
+            
+            // Fix Color Parsing Crash
+            if (computedStyle.color && computedStyle.color.includes('oklch')) {
+              el.style.color = toSafeColor(computedStyle.color);
             }
-            if (style.color && style.color.includes('oklch')) {
-              el.style.color = style.color;
+            if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
+              el.style.backgroundColor = toSafeColor(computedStyle.backgroundColor);
             }
-            if (style.borderColor && style.borderColor.includes('oklch')) {
-              el.style.borderColor = style.borderColor;
+            if (computedStyle.borderColor && computedStyle.borderColor.includes('oklch')) {
+              el.style.borderColor = toSafeColor(computedStyle.borderColor);
+            }
+
+            if (computedStyle.display === 'flex' || computedStyle.display === 'inline-flex') {
+              el.style.display = computedStyle.display;
+              el.style.flexWrap = 'wrap';
             }
           });
         }
