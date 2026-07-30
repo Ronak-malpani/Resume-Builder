@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import api from '../configs/api';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
 
 // Icons
 import { 
@@ -211,89 +212,58 @@ const downloadResume = async () => {
   try {
     await document.fonts.ready;
 
-    // 1. Create a isolated wrapper container
+    // 1. Create off-screen container for rendering
     const container = document.createElement("div");
     container.style.position = "fixed";
     container.style.top = "0";
     container.style.left = "0";
-    container.style.width = "794px"; 
+    container.style.width = "794px"; // Standard A4 width at 96 DPI
     container.style.zIndex = "-9999";
     container.style.opacity = "0";
     container.style.pointerEvents = "none";
 
     const clone = element.cloneNode(true);
-    
-    // Reset canvas transformation to fit 1:1 in printable A4 container
     clone.style.transform = "none";
     clone.style.width = "794px";
-    clone.style.margin = "0 auto";
-    clone.style.boxSizing = "border-box";
+    clone.style.margin = "0";
     
     container.appendChild(clone);
     document.body.appendChild(container);
 
-    const opt = {
-      margin: [0, 0, 0, 0],
-      filename: `${resumeData?.personal_info?.full_name || 'Resume'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false,
-        width: 794,
-        windowWidth: 1200,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById("resume-preview-id");
-          if (!clonedElement) return;
+    // 2. Render with html2canvas-pro (native OKLCH support!)
+    const canvas = await html2canvas(clone, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: 794,
+      windowWidth: 1200
+    });
 
-          // Helper to convert any modern CSS color to strict RGB hex string using browser DOM canvas context
-          const ctx = document.createElement('canvas').getContext('2d');
-          const toSafeColor = (colorStr) => {
-            if (!colorStr || typeof colorStr !== 'string') return '';
-            if (colorStr.includes('oklch') || colorStr.includes('oklab')) {
-              ctx.fillStyle = colorStr;
-              return ctx.fillStyle; 
-            }
-            return colorStr;
-          };
-
-          const allElements = clonedElement.querySelectorAll('*');
-          allElements.forEach((el) => {
-            const computedStyle = window.getComputedStyle(el);
-            
-            // Fix Color Parsing Crash
-            if (computedStyle.color && computedStyle.color.includes('oklch')) {
-              el.style.color = toSafeColor(computedStyle.color);
-            }
-            if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
-              el.style.backgroundColor = toSafeColor(computedStyle.backgroundColor);
-            }
-            if (computedStyle.borderColor && computedStyle.borderColor.includes('oklch')) {
-              el.style.borderColor = toSafeColor(computedStyle.borderColor);
-            }
-
-            if (computedStyle.display === 'flex' || computedStyle.display === 'inline-flex') {
-              el.style.display = computedStyle.display;
-              el.style.flexWrap = 'wrap';
-            }
-          });
-        }
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    await html2pdf().set(opt).from(clone).save();
-    
+    // Clean up container immediately after capture
     document.body.removeChild(container);
+
+    // 3. Convert Canvas to A4 PDF using jsPDF
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width; // Height proportional to content
+
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${resumeData?.personal_info?.full_name || 'Resume'}.pdf`);
+
     toast.success("Downloaded successfully!", { id: toastId });
   } catch (e) {
-    console.error(e);
+    console.error("PDF Export Error:", e);
     toast.error("Download failed. Please try again.", { id: toastId });
   } finally {
     setIsDownloading(false);
   }
 };
-
   const toggleVisibility = async () => {
     const newStatus = !resumeData.public;
     try {
