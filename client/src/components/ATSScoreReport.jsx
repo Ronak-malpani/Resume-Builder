@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, Sparkles, Loader2, Zap, CheckCircle, 
   X, AlertCircle, Share2, Eye, EyeOff, ListChecks, 
@@ -10,7 +10,6 @@ import TemplateSelector from './TemplateSelector';
 
 /* =========================================
    SUB-COMPONENTS (CircularScore & MetricBox)
-   (Keep these exactly as they were - hidden for brevity)
    ========================================= */
 const CircularScore = ({ score }) => {
   const radius = 56;
@@ -103,6 +102,34 @@ const ATSScoreReport = ({
 }) => {
   const [activeMetric, setActiveMetric] = useState(null);
 
+  // Dynamic Scale State for Preview
+  const [previewScale, setPreviewScale] = useState(0.7);
+  const [previewHeight, setPreviewHeight] = useState(0);
+  const previewBoxRef = useRef(null);
+  const previewContentRef = useRef(null);
+
+  // Precision scale calculation matching ResumeBuilder
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (!previewBoxRef.current) return;
+      const { clientWidth } = previewBoxRef.current;
+      if (clientWidth === 0) return;
+
+      // Fit 794px template into available container width
+      const scale = (clientWidth - 32) / 794; 
+      const clampedScale = Math.min(Math.max(scale, 0.35), 1);
+      setPreviewScale(clampedScale);
+
+      if (previewContentRef.current) {
+        setPreviewHeight(previewContentRef.current.scrollHeight || previewContentRef.current.offsetHeight || 0);
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [selectedResume]);
+
   useEffect(() => {
     const handler = (e) => e.key === "Escape" && setActiveMetric(null);
     window.addEventListener("keydown", handler);
@@ -142,8 +169,6 @@ const ATSScoreReport = ({
     };
 
     onSaveSuggestions(upgradedResume);
-    // Success toast is handled in parent, but we can add one here too
-    // toast.success("AI Optimizations applied!");
     onBack(); 
   };
 
@@ -153,7 +178,6 @@ const ATSScoreReport = ({
       {/* --- NAVBAR --- */}
       <nav className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-6 z-20 shadow-sm shrink-0">
         
-        {/* 1. GO BACK TO DASHBOARD (Explicit Text Button) */}
         <button 
             onClick={onBack} 
             className="flex items-center gap-2 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-all font-bold text-sm"
@@ -163,13 +187,11 @@ const ATSScoreReport = ({
 
         <div className="h-6 w-px bg-slate-200 hidden md:block" />
 
-        {/* 2. TITLE & TOOLS (Left Aligned) */}
         <div className="flex items-center gap-4 mr-auto">
             <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Sparkles size={18} className="text-emerald-500" /> ATS Auditor
             </h1>
 
-            {/* Tools Group */}
             <div className="flex items-center gap-3 ml-4">
                 <div className="hidden md:flex bg-slate-100 p-1 rounded-lg">
                     <button 
@@ -197,8 +219,6 @@ const ATSScoreReport = ({
             </div>
         </div>
 
-        {/* 3. SAVE BUTTON (Right Aligned) */}
-        {/* If scanned data exists, it applies it. If not, it just closes (saves current state). */}
         <button 
             onClick={scanReport?.optimizedData ? handleApplyOptimization : onBack}
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-emerald-200 transition-all active:scale-95"
@@ -212,14 +232,31 @@ const ATSScoreReport = ({
       {/* --- CONTENT (Preview & Analysis) --- */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         
-        {/* LEFT PANEL: PREVIEW */}
-        <div className="flex-1 bg-slate-100/50 p-4 lg:p-8 flex justify-center items-start overflow-y-auto scroll-smooth custom-scrollbar">
-          <div className="w-full max-w-2xl shadow-2xl rounded-sm ring-1 ring-slate-900/5 bg-white mb-20">
-            <ResumePreview 
-              data={selectedResume} 
-              template={selectedResume.template || "classic"} 
-              accentColor={selectedResume.accent_color || "#10b981"} 
-            />
+        {/* LEFT PANEL: PREVIEW WITH SCALING WRAPPER */}
+        <div 
+          ref={previewBoxRef}
+          className="flex-1 bg-slate-100/50 p-4 lg:p-8 flex justify-center items-start overflow-y-auto scroll-smooth custom-scrollbar"
+        >
+          {/* SCALE WRAPPER: Ensures full 794px width is scaled proportionally without clipping */}
+          <div 
+            className="w-[794px] min-w-[794px] shrink-0"
+            style={{
+              transform: `scale(${previewScale})`,
+              transformOrigin: 'top center',
+              marginBottom: previewHeight ? `-${previewHeight * (1 - previewScale)}px` : '0px'
+            }}
+          >
+            <div 
+              id="resume-preview-id"
+              ref={previewContentRef}
+              className="bg-white shadow-2xl rounded-sm ring-1 ring-slate-900/5 h-auto min-h-0 overflow-hidden box-border w-[794px] min-w-[794px] max-w-[794px]"
+            >
+              <ResumePreview 
+                data={selectedResume} 
+                template={selectedResume.template || "classic"} 
+                accentColor={selectedResume.accent_color || "#10b981"} 
+              />
+            </div>
           </div>
         </div>
 
@@ -299,7 +336,7 @@ const ATSScoreReport = ({
                             />
                         </div>
 
-                        {/* Apply Fixes (Contextual) */}
+                        {/* Apply Fixes */}
                         <div className="pt-2">
                             <button 
                                 onClick={handleApplyOptimization}
@@ -320,7 +357,6 @@ const ATSScoreReport = ({
       </div>
 
       {/* --- DETAIL MODAL --- */}
-      {/* (Modal code remains same as previous version) */}
       {activeMetric && (
         <div 
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" 

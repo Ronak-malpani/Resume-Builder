@@ -1,123 +1,70 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  ArrowLeft, Sparkles, Loader2, Zap, CheckCircle, 
-  X, AlertCircle, Share2, Eye, EyeOff, ListChecks, 
-  UserCheck, ShieldCheck, Target, TrendingUp, AlertTriangle, Save
-} from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
-import ResumePreview from './ResumePreview';
-import TemplateSelector from './TemplateSelector'; 
+import api from '../configs/api';
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
 
-/* =========================================
-   SUB-COMPONENTS (CircularScore & MetricBox)
-   ========================================= */
-const CircularScore = ({ score }) => {
-  const radius = 56;
-  const circumference = 2 * Math.PI * radius;
-  const safeScore = isNaN(score) ? 0 : score;
-  const offset = circumference - ((safeScore / 100) * circumference);
-  
-  const getColor = (s) => {
-    if (s >= 80) return "text-emerald-500";
-    if (s >= 60) return "text-amber-500";
-    return "text-rose-500";
-  };
+// Icons
+import { 
+  ArrowLeftIcon, ChevronLeft, ChevronRight, 
+  EyeIcon, EyeOffIcon, DownloadIcon, Loader2, 
+  Bold, Italic, Underline, Type, Plus, Minus
+} from 'lucide-react';
 
-  return (
-    <div className="relative flex items-center justify-center w-32 h-32 mx-auto mb-4">
-      <svg className="transform -rotate-90 w-full h-full">
-        <circle cx="64" cy="64" r={radius} stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100" />
-        <circle 
-          cx="64" cy="64" r={radius} 
-          stroke="currentColor" strokeWidth="8" fill="transparent" 
-          strokeDasharray={circumference} 
-          strokeDashoffset={offset} 
-          strokeLinecap="round"
-          className={`transition-all duration-1000 ease-out ${getColor(safeScore)}`} 
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-4xl font-black ${getColor(safeScore)}`}>
-            {safeScore}
-        </span>
-      </div>
-    </div>
-  );
-};
+// Components
+import PersonalInfoForm from '../components/PersonalInfoForm';
+import ProfessionalSummaryForm from '../components/ProfessionalSummaryForm';
+import ExperienceForm from '../components/ExperienceForm';
+import EducationForm from '../components/EducationForm';
+import ProjectForm from '../components/ProjectForm';
+import SkillsForm from '../components/SkillsForm';
+import TemplateSelector from '../components/TemplateSelector';
+import Colorpicker from '../components/Colorpicker';
+import ResumePreview from '../components/ResumePreview';
 
-const MetricBox = ({ id, icon: Icon, label, onClick, data }) => {
-  const score = data?.score; 
-  const hasData = typeof score === 'number';
+const ResumeBuilder = () => {
+  const { resumeId } = useParams();
+  const { token } = useSelector(state => state.auth);
 
-  const getStatus = (s) => {
-    if (!hasData) return { color: "text-slate-400", bg: "bg-slate-50", badge: "N/A", bar: "bg-slate-300" };
-    if (s >= 80) return { color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", badge: "Excellent", bar: "bg-emerald-500" };
-    if (s >= 50) return { color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200", badge: "Needs Work", bar: "bg-amber-500" };
-    return { color: "text-rose-700", bg: "bg-rose-50", border: "border-rose-200", badge: "Critical", bar: "bg-rose-500" };
-  };
-
-  const status = getStatus(score);
-
-  return (
-    <button 
-      onClick={onClick}
-      disabled={!hasData}
-      className={`relative w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 group
-        ${status.bg} ${status.border || 'border-slate-100'} 
-        ${hasData ? 'hover:shadow-lg hover:-translate-y-1 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
-    >
-      <div className="flex justify-between items-start mb-3">
-        <div className={`p-2 rounded-xl bg-white shadow-sm ${status.color}`}>
-          <Icon size={20} />
-        </div>
-        <div className="text-right">
-          <span className={`block text-3xl font-black ${status.color}`}>
-            {hasData ? score : "--"}
-          </span>
-        </div>
-      </div>
-
-      <div className="mb-3">
-         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</h4>
-         <p className={`text-[10px] font-bold uppercase mt-1 px-2 py-0.5 rounded-full w-fit bg-white border ${status.color === 'text-slate-400' ? 'border-slate-200 text-slate-400' : `${status.color} border-current opacity-80`}`}>
-           {status.badge}
-         </p>
-      </div>
-
-      <div className="w-full bg-white/60 h-2 rounded-full overflow-hidden">
-        <div 
-          className={`h-full rounded-full transition-all duration-1000 ${status.bar}`} 
-          style={{ width: `${score || 0}%` }} 
-        />
-      </div>
-    </button>
-  );
-};
-
-/* =========================================
-   MAIN COMPONENT
-   ========================================= */
-const ATSScoreReport = ({ 
-  selectedResume, onBack, isScanning, scanReport, onScan, onSaveSuggestions, onUpdateVisibility, onUpdateTemplate 
-}) => {
-  const [activeMetric, setActiveMetric] = useState(null);
-
-  // Dynamic Scale State for Preview
-  const [previewScale, setPreviewScale] = useState(0.7);
+  const [resumeData, setResumeData] = useState(null);
+  const [debouncedResumeData, setDebouncedResumeData] = useState(null);
+  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [previewScale, setPreviewScale] = useState(0.55);
   const [previewHeight, setPreviewHeight] = useState(0);
+
+  // Exact Numeric Font Size State
+  const [fontSize, setFontSize] = useState(12);
+  const [selectedTarget, setSelectedTarget] = useState(null);
+
   const previewBoxRef = useRef(null);
   const previewContentRef = useRef(null);
 
-  // Precision scale calculation matching ResumeBuilder
+  const fontSizesList = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 50];
+
+  const sections = useMemo(() => [
+    { id: "personal", name: "Personal Information" },
+    { id: "summary", name: "Professional Summary" },
+    { id: "experience", name: "Experience" },
+    { id: "education", name: "Education" },
+    { id: "projects", name: "Projects" },
+    { id: "skills", name: "Skills" },
+  ], []);
+
+  const activeSection = sections[activeSectionIndex];
+
+  // Precision scale & dynamic height calculation
   useEffect(() => {
     const updateDimensions = () => {
       if (!previewBoxRef.current) return;
       const { clientWidth } = previewBoxRef.current;
       if (clientWidth === 0) return;
 
-      // Fit 794px template into available container width
-      const scale = (clientWidth - 32) / 794; 
-      const clampedScale = Math.min(Math.max(scale, 0.35), 1);
+      const scale = clientWidth / 794; 
+      const clampedScale = Math.min(Math.max(scale, 0.40), 1);
       setPreviewScale(clampedScale);
 
       if (previewContentRef.current) {
@@ -128,116 +75,328 @@ const ATSScoreReport = ({
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
-  }, [selectedResume]);
+  }, [resumeData, debouncedResumeData, fontSize]);
 
   useEffect(() => {
-    const handler = (e) => e.key === "Escape" && setActiveMetric(null);
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
-  const handleShare = async () => {
-    if (!selectedResume._id || !selectedResume.public) {
-      return toast.error("Resume must be Public to share.");
-    }
-    const shareUrl = `${window.location.origin}/view/${selectedResume._id}`;
-    
-    if (navigator.share) {
+    const loadResume = async () => {
       try {
-        await navigator.share({
-          title: `Resume - ${selectedResume.personal_info?.full_name}`,
-          url: shareUrl,
+        const { data } = await api.get(`/api/resumes/get/${resumeId}`, { 
+          headers: { Authorization: token } 
         });
-      } catch (err) { /* ignore */ }
+        if (data.resume) {
+          setResumeData(data.resume);
+          setDebouncedResumeData(data.resume);
+          document.title = data.resume.title || "Resume Builder";
+        }
+      } catch (error) {
+        toast.error("Failed to load resume");
+      }
+    };
+    if (resumeId && token) loadResume();
+  }, [resumeId, token]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedResumeData(resumeData);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [resumeData]);
+
+  // 1. TEXT FORMATTING FUNCTION
+  const applyTextFormat = (command) => {
+    const selection = window.getSelection();
+    
+    if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+      const range = selection.getRangeAt(0);
+      const span = document.createElement('span');
+      
+      if (command === 'bold') span.style.fontWeight = 'bold';
+      if (command === 'italic') span.style.fontStyle = 'italic';
+      if (command === 'underline') span.style.textDecoration = 'underline';
+      
+      try {
+        range.surroundContents(span);
+        selection.removeAllRanges();
+      } catch (err) {
+        document.execCommand(command, false, null);
+      }
+    } 
+    else if (selectedTarget) {
+      if (command === 'bold') {
+        selectedTarget.style.fontWeight = selectedTarget.style.fontWeight === 'bold' ? 'normal' : 'bold';
+      }
+      if (command === 'italic') {
+        selectedTarget.style.fontStyle = selectedTarget.style.fontStyle === 'italic' ? 'normal' : 'italic';
+      }
+      if (command === 'underline') {
+        selectedTarget.style.textDecoration = selectedTarget.style.textDecoration === 'underline' ? 'none' : 'underline';
+      }
     } else {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("Public link copied!");
+      toast.error("Please click or select specific text in the preview first.");
     }
   };
 
-  const handleApplyOptimization = () => {
-    if (!scanReport?.optimizedData) return toast.error("No suggestions available.");
-
-    const upgradedResume = {
-      ...selectedResume,
-      professional_summary: scanReport.optimizedData.professional_summary || selectedResume.professional_summary,
-      skills: scanReport.optimizedData.skills || selectedResume.skills,
-      experience: selectedResume.experience.map((exp, index) => ({
-        ...exp,
-        description: scanReport.optimizedData.experience?.[index]?.description || exp.description
-      }))
-    };
-
-    onSaveSuggestions(upgradedResume);
-    onBack(); 
+  // 2. PREVIEW TARGETING
+  const handlePreviewClick = (e) => {
+    e.stopPropagation();
+    const clickedElement = e.target;
+    
+    if (clickedElement) {
+      setSelectedTarget(clickedElement);
+      
+      const text = clickedElement.innerText?.toLowerCase() || '';
+      if (text.includes('summary')) setActiveSectionIndex(1);
+      else if (text.includes('experience')) setActiveSectionIndex(2);
+      else if (text.includes('education')) setActiveSectionIndex(3);
+      else if (text.includes('project')) setActiveSectionIndex(4);
+      else if (text.includes('skill')) setActiveSectionIndex(5);
+    }
   };
+
+  // 3. ADJUST FONT SIZE
+  const adjustFontSize = (delta) => {
+    if (selectedTarget) {
+      const computedSize = parseFloat(window.getComputedStyle(selectedTarget).fontSize);
+      const newSize = Math.min(Math.max(computedSize + delta, 8), 50);
+      selectedTarget.style.fontSize = `${newSize}px`;
+    } else {
+      setFontSize(prev => Math.min(Math.max(prev + delta, 8), 50));
+    }
+  };
+
+  const handleDataChange = (sectionKey, newData) => {
+    setResumeData((prev) => ({
+      ...prev,
+      [sectionKey]: newData
+    }));
+  };
+
+  const saveResume = async () => {
+    if (!resumeData) return;
+    setIsSaving(true);
+    try {
+      const updatedData = structuredClone(resumeData);
+      const imageFile = updatedData.personal_info?.image instanceof File ? updatedData.personal_info.image : null;
+      if (imageFile) delete updatedData.personal_info.image;
+
+      const formData = new FormData();
+      formData.append("resumeId", resumeId);
+      formData.append("resumeData", JSON.stringify(updatedData));
+      if (imageFile) formData.append("image", imageFile);
+
+      const { data } = await api.put('/api/resumes/update', formData, { 
+        headers: { Authorization: token } 
+      });
+      setResumeData(data.resume);
+      setDebouncedResumeData(data.resume);
+      toast.success("Changes saved!");
+    } catch (error) {
+      toast.error("Failed to save.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleVisibility = () => {
+    setResumeData(prev => ({ ...prev, public: !prev?.public }));
+  };
+
+  // PERFECT MATCH PDF EXPORT
+  const downloadResume = async () => {
+    const element = document.getElementById("resume-preview-id");
+    if (!element) return toast.error("Preview not ready");
+    
+    setIsDownloading(true);
+    const toastId = toast.loading("Generating PDF...");
+
+    try {
+      await document.fonts.ready;
+
+      // 1. Create invisible isolated off-screen viewport
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "-9999px";
+      container.style.width = "794px";
+      container.style.backgroundColor = "#ffffff";
+      container.style.zIndex = "-9999";
+
+      // 2. Clone node and clear CSS scale transformations
+      const clone = element.cloneNode(true);
+      clone.style.transform = "none";
+      clone.style.width = "794px";
+      clone.style.minWidth = "794px";
+      clone.style.maxWidth = "794px";
+      clone.style.height = "auto";
+      clone.style.margin = "0";
+      clone.style.padding = "0";
+      clone.style.boxSizing = "border-box";
+
+      container.appendChild(clone);
+      document.body.appendChild(container);
+
+      // Brief pause for browser reflow
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      // 3. Measure accurate content height (first child node inside resume-preview-id)
+      const targetChild = clone.firstElementChild || clone;
+      const contentHeight = Math.ceil(targetChild.getBoundingClientRect().height);
+
+      // 4. Render html2canvas
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: 794,
+        height: contentHeight,
+        windowWidth: 1200,
+        windowHeight: contentHeight,
+        scrollX: 0,
+        scrollY: 0
+      });
+
+      document.body.removeChild(container);
+
+      // 5. Build dynamic-height PDF matching image pixel height
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (contentHeight * pdfWidth) / 794;
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [pdfWidth, pdfHeight]
+      });
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${resumeData?.personal_info?.full_name || 'Resume'}.pdf`);
+
+      toast.success("Downloaded successfully!", { id: toastId });
+    } catch (e) {
+      console.error("PDF Export Error:", e);
+      toast.error("Download failed. Please try again.", { id: toastId });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Loading Guard
+  if (!resumeData) {
+    return (
+      <div className="w-full h-screen flex flex-col items-center justify-center gap-3 bg-slate-50">
+        <Loader2 className="animate-spin text-green-600" size={32} />
+        <p className="text-slate-500 text-sm font-medium">Loading your resume...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col font-sans overflow-hidden">
+    <div className="w-full min-h-screen bg-slate-50 flex flex-col p-3 lg:p-4">
       
-      {/* --- NAVBAR --- */}
-      <nav className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-6 z-20 shadow-sm shrink-0">
+      {/* Top Header Navigation */}
+      <div className="shrink-0 mb-2 flex justify-between items-center">
+        <Link to="/app" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-green-600 text-xs font-medium transition-colors">
+          <ArrowLeftIcon size={14} /> Back to Dashboard
+        </Link>
+      </div>
+
+      {/* Main Layout Grid */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full max-w-[1440px] mx-auto">
         
-        <button 
-            onClick={onBack} 
-            className="flex items-center gap-2 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-all font-bold text-sm"
-        >
-            <ArrowLeft size={18} /> Back to Dashboard
-        </button>
+        {/* === LEFT SIDE: FORM EDITOR & RICH TOOLBAR === */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 flex flex-col shadow-xs overflow-hidden">
+          
+          {/* Header Controls & Rich Formatting Toolbar */}
+          <div className="p-2 border-b border-slate-100 flex flex-wrap justify-between items-center gap-2 shrink-0 bg-slate-50/50">
+            <div className="flex items-center gap-1.5 flex-wrap">
+               <TemplateSelector selectedTemplate={resumeData?.template || 'classic'} onChange={t => setResumeData(prev => ({...prev, template: t}))} />
+               <Colorpicker selectedColor={resumeData?.accent_color || '#000000'} onChange={c => setResumeData(prev => ({...prev, accent_color: c}))} />
+               
+               {/* BOLD / ITALIC / UNDERLINE CONTROLS */}
+               <div className="flex items-center bg-white p-0.5 rounded-md border border-slate-200 text-xs shadow-2xs">
+                  <button onClick={() => applyTextFormat('bold')} className="p-1 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900" title="Bold">
+                    <Bold size={13} />
+                  </button>
+                  <button onClick={() => applyTextFormat('italic')} className="p-1 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900" title="Italic">
+                    <Italic size={13} />
+                  </button>
+                  <button onClick={() => applyTextFormat('underline')} className="p-1 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900" title="Underline">
+                    <Underline size={13} />
+                  </button>
+               </div>
 
-        <div className="h-6 w-px bg-slate-200 hidden md:block" />
+               {/* NUMERIC FONT SIZE SELECTOR */}
+               <div className="flex items-center bg-white p-0.5 rounded-md border border-slate-200 text-xs shadow-2xs">
+                  <Type size={13} className="text-slate-400 mx-1" />
+                  <select 
+                    value={fontSize} 
+                    onChange={(e) => {
+                      const newSz = Number(e.target.value);
+                      setFontSize(newSz);
+                      if (selectedTarget) selectedTarget.style.fontSize = `${newSz}px`;
+                    }}
+                    className="bg-transparent font-semibold text-slate-700 outline-none text-xs cursor-pointer py-0.5"
+                  >
+                    {fontSizesList.map(sz => (
+                      <option key={sz} value={sz}>{sz}px</option>
+                    ))}
+                  </select>
 
-        <div className="flex items-center gap-4 mr-auto">
-            <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Sparkles size={18} className="text-emerald-500" /> ATS Auditor
-            </h1>
-
-            <div className="flex items-center gap-3 ml-4">
-                <div className="hidden md:flex bg-slate-100 p-1 rounded-lg">
-                    <button 
-                        onClick={() => onUpdateVisibility(selectedResume._id, false)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${!selectedResume.public ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}>
-                        Private
-                    </button>
-                    <button 
-                        onClick={() => onUpdateVisibility(selectedResume._id, true)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${selectedResume.public ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'}`}>
-                        Public
-                    </button>
-                </div>
-                
-                <TemplateSelector 
-                  selectedTemplate={selectedResume.template || 'classic'} 
-                  onChange={(id) => onUpdateTemplate(selectedResume._id, id)} 
-                />
-
-                {selectedResume.public && (
-                    <button onClick={handleShare} className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" title="Share Public Link">
-                        <Share2 size={18} />
-                    </button>
-                )}
+                  <button onClick={() => adjustFontSize(1)} className="p-0.5 hover:bg-slate-100 rounded ml-1 text-slate-600"><Plus size={12}/></button>
+                  <button onClick={() => adjustFontSize(-1)} className="p-0.5 hover:bg-slate-100 rounded text-slate-600"><Minus size={12}/></button>
+               </div>
             </div>
+            
+            {/* Section Pagination */}
+            <div className="flex items-center gap-1">
+                <button onClick={() => setActiveSectionIndex(p => Math.max(0, p-1))} disabled={activeSectionIndex===0} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronLeft size={18} strokeWidth={2.5} /></button>
+                <span className="text-xs font-bold text-slate-400 w-8 text-center select-none">{activeSectionIndex + 1}/{sections.length}</span>
+                <button onClick={() => setActiveSectionIndex(p => Math.min(sections.length-1, p+1))} disabled={activeSectionIndex===sections.length-1} className="hover:text-green-600 disabled:opacity-30 p-1 transition-colors"><ChevronRight size={18} strokeWidth={2.5} /></button>
+            </div>
+          </div>
+
+          {/* Form Content */}
+          <div className="p-4">
+             {activeSection.id === 'personal' && <PersonalInfoForm data={resumeData?.personal_info || {}} onChange={(d) => handleDataChange('personal_info', d)} />}
+             {activeSection.id === 'summary' && <ProfessionalSummaryForm data={resumeData?.professional_summary || ''} onChange={(d) => handleDataChange('professional_summary', d)} />}
+             {activeSection.id === 'experience' && <ExperienceForm data={resumeData?.experience || []} onChange={(d) => handleDataChange('experience', d)} />}
+             {activeSection.id === 'education' && <EducationForm data={resumeData?.education || []} onChange={(d) => handleDataChange('education', d)} />}
+             {activeSection.id === 'projects' && <ProjectForm data={resumeData?.project || []} onChange={(d) => handleDataChange('project', d)} />}
+             {activeSection.id === 'skills' && <SkillsForm data={resumeData?.skills || []} onChange={(d) => handleDataChange('skills', d)} />}
+          </div>
+
+          {/* Footer Actions */}
+          <div className="p-3 border-t border-slate-100 space-y-2 bg-slate-50/50 shrink-0">
+            <button onClick={saveResume} disabled={isSaving} className="w-full py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-lg font-bold text-xs transition-all flex justify-center items-center gap-2 shadow-xs">
+                {isSaving ? <Loader2 className="animate-spin" size={14} /> : "Save Changes"}
+            </button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                onClick={toggleVisibility} 
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold border transition-all ${resumeData?.public ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-600 border-slate-200'}`}
+              >
+                  {resumeData?.public ? <EyeIcon size={14}/> : <EyeOffIcon size={14}/>}
+                  {resumeData?.public ? "Public" : "Private"}
+              </button>
+
+              <button 
+                onClick={downloadResume} 
+                disabled={isDownloading} 
+                className="flex items-center justify-center gap-1.5 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition-all disabled:opacity-50"
+              >
+                  {isDownloading ? <Loader2 className="animate-spin" size={14} /> : <DownloadIcon size={14}/>} Download PDF
+              </button>
+            </div>
+          </div>
         </div>
 
-        <button 
-            onClick={scanReport?.optimizedData ? handleApplyOptimization : onBack}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-emerald-200 transition-all active:scale-95"
-        >
-            <Save size={18} />
-            {scanReport?.optimizedData ? "Save AI Changes" : "Save & Close"}
-        </button>
-
-      </nav>
-
-      {/* --- CONTENT (Preview & Analysis) --- */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-        
-        {/* LEFT PANEL: PREVIEW WITH SCALING WRAPPER */}
+        {/* === RIGHT SIDE: PREVIEW === */}
         <div 
           ref={previewBoxRef}
-          className="flex-1 bg-slate-100/50 p-4 lg:p-8 flex justify-center items-start overflow-y-auto scroll-smooth custom-scrollbar"
+          className="lg:col-span-5 w-full flex justify-center items-start sticky top-4 overflow-hidden"
         >
-          {/* SCALE WRAPPER: Ensures full 794px width is scaled proportionally without clipping */}
+          {/* SCALE WRAPPER */}
           <div 
             className="w-[794px] min-w-[794px] shrink-0"
             style={{
@@ -246,174 +405,28 @@ const ATSScoreReport = ({
               marginBottom: previewHeight ? `-${previewHeight * (1 - previewScale)}px` : '0px'
             }}
           >
+            {/* DYNAMIC HEIGHT PREVIEW NODE */}
             <div 
               id="resume-preview-id"
               ref={previewContentRef}
-              className="bg-white shadow-2xl rounded-sm ring-1 ring-slate-900/5 h-auto min-h-0 overflow-hidden box-border w-[794px] min-w-[794px] max-w-[794px]"
+              onClick={handlePreviewClick}
+              className="bg-white shadow-xl border border-slate-100 rounded-sm cursor-pointer h-auto min-h-0 overflow-hidden box-border w-[794px] min-w-[794px] max-w-[794px]"
             >
-              <ResumePreview 
-                data={selectedResume} 
-                template={selectedResume.template || "classic"} 
-                accentColor={selectedResume.accent_color || "#10b981"} 
-              />
+               {debouncedResumeData && (
+                 <ResumePreview 
+                     data={debouncedResumeData} 
+                     template={debouncedResumeData?.template || 'classic'} 
+                     accentColor={debouncedResumeData?.accent_color}
+                     baseFontSize={fontSize}
+                 />
+               )}
             </div>
           </div>
         </div>
 
-        {/* RIGHT PANEL: DASHBOARD */}
-        <div className="w-full lg:w-[450px] bg-white border-l border-slate-200 flex flex-col h-[50vh] lg:h-full shadow-2xl z-10 shrink-0">
-            
-            {/* Header & Score */}
-            <div className="p-6 border-b border-slate-100 text-center bg-gradient-to-b from-slate-50 to-white shrink-0">
-                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">ATS Suitability Score</h2>
-                
-                {scanReport ? (
-                    <div className="animate-in zoom-in duration-500">
-                        <CircularScore score={scanReport.score} />
-                        <p className="text-slate-500 text-sm font-medium">
-                            Matches <strong>{scanReport.score}%</strong> of industry standards
-                        </p>
-                    </div>
-                ) : (
-                    <div className="py-8 flex flex-col items-center opacity-40">
-                        <Zap size={48} className="text-slate-300 mb-2" />
-                        <span className="text-sm font-medium text-slate-400">Ready to audit</span>
-                    </div>
-                )}
-                
-                <button 
-                    onClick={onScan}
-                    disabled={isScanning}
-                    className="mt-6 w-full py-3.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold transition-all shadow-lg shadow-slate-900/20 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                >
-                    {isScanning ? <Loader2 className="animate-spin" /> : <Target size={18} />}
-                    {isScanning ? 'Analyzing Resume...' : 'Run ATS Audit'}
-                </button>
-            </div>
-
-            {/* Metrics Scroll Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50/50">
-                {scanReport && (
-                    <div className="animate-in slide-in-from-bottom-5 duration-500 space-y-6 pb-10">
-                        
-                        {/* Missing Keywords */}
-                        {scanReport.keywordGaps && scanReport.keywordGaps.length > 0 && (
-                             <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
-                                <h3 className="text-rose-800 font-bold text-xs flex items-center gap-2 mb-3 uppercase tracking-wider">
-                                    <AlertTriangle size={14} /> Missing Keywords
-                                </h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {scanReport.keywordGaps.map((kw, i) => (
-                                        <span key={i} className="text-xs bg-rose-50 text-rose-700 border border-rose-100 px-2 py-1 rounded-md font-bold">
-                                            {kw}
-                                        </span>
-                                    ))}
-                                </div>
-                             </div>
-                        )}
-
-                        {/* Metrics Grid */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <MetricBox 
-                              id="content" label="Impact" icon={TrendingUp} 
-                              data={scanReport.metrics?.content}
-                              onClick={() => setActiveMetric({ ...scanReport.metrics?.content, title: "Impact & Verbs" })} 
-                            />
-                            <MetricBox 
-                              id="sections" label="Structure" icon={ListChecks} 
-                              data={scanReport.metrics?.sections}
-                              onClick={() => setActiveMetric({ ...scanReport.metrics?.sections, title: "Sections Formatting" })} 
-                            />
-                            <MetricBox 
-                              id="tailoring" label="Relevance" icon={Target} 
-                              data={scanReport.metrics?.tailoring}
-                              onClick={() => setActiveMetric({ ...scanReport.metrics?.tailoring, title: "Job Tailoring" })} 
-                            />
-                            <MetricBox 
-                              id="contact" label="Contact" icon={UserCheck} 
-                              data={scanReport.metrics?.contact}
-                              onClick={() => setActiveMetric({ ...scanReport.metrics?.contact, title: "Personal Info" })} 
-                            />
-                        </div>
-
-                        {/* Apply Fixes */}
-                        <div className="pt-2">
-                            <button 
-                                onClick={handleApplyOptimization}
-                                className="group w-full relative overflow-hidden bg-emerald-600 text-white py-4 rounded-xl font-bold transition-all hover:bg-emerald-700 hover:shadow-lg active:scale-95"
-                            >
-                                <span className="relative flex items-center justify-center gap-2">
-                                  <Sparkles size={18} /> Apply AI Improvements
-                                </span>
-                            </button>
-                            <p className="text-[10px] text-center text-slate-400 mt-3 px-4 leading-relaxed">
-                                Automatically updates summary, skills, and bullet points.
-                            </p>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
       </div>
-
-      {/* --- DETAIL MODAL --- */}
-      {activeMetric && (
-        <div 
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" 
-            onClick={() => setActiveMetric(null)}
-        >
-          <div 
-            className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20" 
-            onClick={e => e.stopPropagation()} 
-          >
-            <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                 Analysis: {activeMetric.title}
-              </h3>
-              <button onClick={() => setActiveMetric(null)} className="text-white/70 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-6">
-               <div className="flex gap-4 items-start">
-                  <div className="bg-rose-100 p-2 rounded-full text-rose-600 mt-0.5 flex-shrink-0">
-                    <AlertCircle size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wide">Issue Detected</h4>
-                    <p className="text-slate-600 text-sm mt-2 leading-relaxed bg-rose-50 p-3 rounded-lg border border-rose-100">
-                        {activeMetric.wrong || "No specific issues detected."}
-                    </p>
-                  </div>
-               </div>
-               <div className="h-px bg-slate-100" />
-               <div className="flex gap-4 items-start">
-                  <div className="bg-emerald-100 p-2 rounded-full text-emerald-600 mt-0.5 flex-shrink-0">
-                    <CheckCircle size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wide">Recommended Fix</h4>
-                    <p className="text-slate-600 text-sm mt-2 leading-relaxed bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-                        {activeMetric.fix || "This section looks good! Keep it up."}
-                    </p>
-                  </div>
-               </div>
-            </div>
-
-            <div className="bg-slate-50 p-4 flex justify-end border-t border-slate-100">
-                <button 
-                    onClick={() => setActiveMetric(null)} 
-                    className="px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-sm transition-colors shadow-sm"
-                >
-                    Close Analysis
-                </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default ATSScoreReport;
+export default ResumeBuilder;
