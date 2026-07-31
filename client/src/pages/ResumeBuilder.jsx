@@ -201,7 +201,7 @@ const ResumeBuilder = () => {
     setResumeData(prev => ({ ...prev, public: !prev?.public }));
   };
 
-  // BULLETPROOF DIRECT-DOM SNAPSHOT (NO CLONING SHIFT)
+  // PERFECT MATCH PDF EXPORT
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -209,30 +209,42 @@ const ResumeBuilder = () => {
     setIsDownloading(true);
     const toastId = toast.loading("Generating PDF...");
 
-    // Store original scaling and parent styles to restore right after capture
-    const parentContainer = previewBoxRef.current;
-    const originalScale = previewScale;
-    const originalHeight = previewHeight;
-
     try {
       await document.fonts.ready;
 
-      // 1. Momentarily set live preview element to scale(1) in DOM for exact parity
-      const scaleWrapper = element.parentElement;
-      if (scaleWrapper) {
-        scaleWrapper.style.transform = "scale(1)";
-        scaleWrapper.style.marginBottom = "0px";
-      }
+      // 1. Create off-screen sandbox container with fixed 794px width
+      const sandbox = document.createElement("div");
+      sandbox.style.position = "absolute";
+      sandbox.style.top = "-9999px";
+      sandbox.style.left = "-9999px";
+      sandbox.style.width = "794px";
+      sandbox.style.backgroundColor = "#ffffff";
+      sandbox.style.boxSizing = "border-box";
+      sandbox.style.overflow = "hidden";
+
+      // 2. Clone preview DOM tree & reset CSS scale properties
+      const clone = element.cloneNode(true);
+      clone.style.transform = "none";
+      clone.style.width = "794px";
+      clone.style.minWidth = "794px";
+      clone.style.maxWidth = "794px";
+      clone.style.height = "auto";
+      clone.style.minHeight = "0px";
+      clone.style.margin = "0";
+      clone.style.padding = "0";
+      clone.style.boxSizing = "border-box";
+
+      sandbox.appendChild(clone);
+      document.body.appendChild(sandbox);
 
       // Force synchronous DOM reflow
-      void element.offsetHeight;
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      // 2. Measure actual tightly-wrapped height
-      const contentHeight = Math.ceil(element.scrollHeight || element.offsetHeight);
+      // 3. Get exact content bounding height
+      const contentHeight = Math.ceil(clone.firstElementChild?.getBoundingClientRect().height || clone.getBoundingClientRect().height);
 
-      // 3. Render Canvas directly from the active, perfectly styled element
-      const canvas = await html2canvas(element, {
+      // 4. Render canvas at full 794px scale resolution
+      const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         logging: false,
@@ -241,32 +253,21 @@ const ResumeBuilder = () => {
         windowWidth: 794,
         windowHeight: contentHeight,
         scrollX: 0,
-        scrollY: 0,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById("resume-preview-id");
-          if (clonedElement) {
-            clonedElement.style.height = `${contentHeight}px`;
-            clonedElement.style.minHeight = "0px";
-            clonedElement.style.boxSizing = "border-box";
-          }
-        }
+        scrollY: 0
       });
 
-      // 4. Instantly restore preview UI scale back to user's view
-      if (scaleWrapper) {
-        scaleWrapper.style.transform = `scale(${originalScale})`;
-        scaleWrapper.style.marginBottom = originalHeight ? `-${originalHeight * (1 - originalScale)}px` : '0px';
-      }
+      // Remove temporary DOM node
+      document.body.removeChild(sandbox);
 
-      // 5. Generate mm-proportional PDF matching actual content height
+      // 5. Build proportional jsPDF format matching actual content length
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const pdfWidth = 210; // A4 width in mm
-      const pdfHeight = (contentHeight * pdfWidth) / 794;
+      const pdfWidth = 210; // Standard A4 width in mm
+      const pdfHeight = (contentHeight * pdfWidth) / 794; // Exactly proportional height in mm
 
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [pdfWidth, pdfHeight]
+        format: [pdfWidth, pdfHeight] // Dynamic PDF canvas size stops right where content ends
       });
 
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
@@ -276,13 +277,6 @@ const ResumeBuilder = () => {
     } catch (e) {
       console.error("PDF Export Error:", e);
       toast.error("Download failed. Please try again.", { id: toastId });
-
-      // Fallback restore if canvas fails mid-generation
-      const scaleWrapper = element.parentElement;
-      if (scaleWrapper) {
-        scaleWrapper.style.transform = `scale(${originalScale})`;
-        scaleWrapper.style.marginBottom = originalHeight ? `-${originalHeight * (1 - originalScale)}px` : '0px';
-      }
     } finally {
       setIsDownloading(false);
     }
