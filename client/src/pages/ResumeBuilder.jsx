@@ -202,6 +202,7 @@ const ResumeBuilder = () => {
   };
 
   // PERFECT MATCH PDF EXPORT
+  // PERFECT MATCH PDF EXPORT
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -212,6 +213,9 @@ const ResumeBuilder = () => {
     try {
       await document.fonts.ready;
 
+      // Target the actual inner template element to avoid preview container wrapper artifacts
+      const targetElement = element.firstElementChild || element;
+
       // 1. Create invisible isolated off-screen viewport
       const container = document.createElement("div");
       container.style.position = "fixed";
@@ -221,15 +225,15 @@ const ResumeBuilder = () => {
       container.style.backgroundColor = "#ffffff";
       container.style.zIndex = "-9999";
 
-      // 2. Clone node and clear CSS scale transformations
-      const clone = element.cloneNode(true);
+      // 2. Clone node and explicitly strip transform/scale styles
+      const clone = targetElement.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
       clone.style.minWidth = "794px";
       clone.style.maxWidth = "794px";
       clone.style.height = "auto";
       clone.style.margin = "0";
-      clone.style.padding = "0";
+      clone.style.padding = "32px";
       clone.style.boxSizing = "border-box";
 
       container.appendChild(clone);
@@ -238,11 +242,9 @@ const ResumeBuilder = () => {
       // Brief pause for browser reflow
       await new Promise(resolve => setTimeout(resolve, 150));
 
-      // 3. Measure accurate content height (first child node inside resume-preview-id)
-      const targetChild = clone.firstElementChild || clone;
-      const contentHeight = Math.ceil(targetChild.getBoundingClientRect().height);
+      const contentHeight = Math.ceil(clone.getBoundingClientRect().height || clone.offsetHeight);
 
-      // 4. Render html2canvas
+      // 3. Render html2canvas with full 1200px window layout headroom
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
@@ -257,7 +259,7 @@ const ResumeBuilder = () => {
 
       document.body.removeChild(container);
 
-      // 5. Build dynamic-height PDF matching image pixel height
+      // 4. Build dynamic-height PDF matching image pixel height
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
       const pdfWidth = 210; // A4 width in mm
       const pdfHeight = (contentHeight * pdfWidth) / 794;

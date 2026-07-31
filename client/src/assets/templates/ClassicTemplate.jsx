@@ -36,7 +36,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
     const hasEducation = data.education && data.education.length > 0 && data.education.some(edu => edu.institution?.trim());
 
     return (
-        // FIXED A4 WIDTH WITH STRICT BOX SIZING
+        // EXACT A4 PIXEL CONTAINER (794px = 210mm at 96 DPI)
         <div 
             className="bg-white text-gray-800 font-serif overflow-hidden break-words"
             style={{ 
@@ -98,12 +98,12 @@ const ClassicTemplate = ({ data, accentColor }) => {
                     <div className="space-y-4">
                         {data.experience.map((exp, index) => (
                             <div key={index} className="w-full">
-                                {/* NO TRUNCATE: Row wrapping ensured without cutoffs */}
-                                <div className="flex justify-between items-baseline mb-0 gap-4 w-full">
-                                    <h3 className="text-[14px] font-bold text-gray-900 uppercase">
+                                {/* FIXED FLEX HEADER: min-w-0 flex-1 forces title to stay inside bounds */}
+                                <div className="flex justify-between items-baseline mb-0 gap-2 w-full">
+                                    <h3 className="text-[14px] font-bold text-gray-900 uppercase min-w-0 flex-1">
                                         {exp.position || "Position Title"}
                                     </h3>
-                                    <span className="text-[10px] font-bold text-gray-500 tabular-nums uppercase whitespace-nowrap shrink-0">
+                                    <span className="text-[10px] font-bold text-gray-500 tabular-nums uppercase whitespace-nowrap shrink-0 ml-auto text-right">
                                         {formatDate(exp.startDate || exp.start_date)} — {exp.is_current ? "Present" : formatDate(exp.endDate || exp.end_date)}
                                     </span>
                                 </div>
@@ -149,14 +149,14 @@ const ClassicTemplate = ({ data, accentColor }) => {
                         <div className="space-y-3">
                             {data.education.map((edu, index) => edu.institution && (
                                 <div key={index} className="flex justify-between items-start gap-2 w-full">
-                                    <div>
+                                    <div className="min-w-0 flex-1">
                                         <h3 className="font-bold text-[13px] text-gray-900 leading-tight">
                                             {edu.degree} {edu.field ? `in ${edu.field}` : ""}
                                         </h3>
                                         <p className="text-[11px] text-gray-700">{edu.institution}</p>
                                         {edu.gpa && <p className="text-[10px] text-gray-500">GPA: <span className="font-bold">{edu.gpa}</span></p>}
                                     </div>
-                                    <span className="text-[10px] font-bold text-gray-400 tabular-nums whitespace-nowrap shrink-0">
+                                    <span className="text-[10px] font-bold text-gray-400 tabular-nums whitespace-nowrap shrink-0 ml-auto text-right">
                                         {formatDate(edu.graduationDate || edu.graduation_date)}
                                     </span>
                                 </div>
@@ -173,7 +173,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
                         </h2>
                         <div className="flex flex-wrap gap-1.5 w-full">
                             {data.skills.map((skill, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-700 border border-gray-100 rounded text-[10px] font-medium leading-none">
+                                <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-700 border border-gray-100 rounded text-[10px] font-medium leading-none shrink-0">
                                     {skill}
                                 </span>
                             ))}
