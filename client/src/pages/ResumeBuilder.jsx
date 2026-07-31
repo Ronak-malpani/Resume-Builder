@@ -212,38 +212,37 @@ const ResumeBuilder = () => {
     try {
       await document.fonts.ready;
 
-      // 1. Create off-screen sandbox container with fixed 794px width
-      const sandbox = document.createElement("div");
-      sandbox.style.position = "absolute";
-      sandbox.style.top = "-9999px";
-      sandbox.style.left = "-9999px";
-      sandbox.style.width = "794px";
-      sandbox.style.backgroundColor = "#ffffff";
-      sandbox.style.boxSizing = "border-box";
-      sandbox.style.overflow = "hidden";
+      // 1. Create invisible isolated off-screen viewport
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "-9999px";
+      container.style.width = "794px";
+      container.style.backgroundColor = "#ffffff";
+      container.style.zIndex = "-9999";
 
-      // 2. Clone preview DOM tree & reset CSS scale properties
+      // 2. Clone node and clear CSS scale transformations
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
       clone.style.minWidth = "794px";
       clone.style.maxWidth = "794px";
       clone.style.height = "auto";
-      clone.style.minHeight = "0px";
       clone.style.margin = "0";
       clone.style.padding = "0";
       clone.style.boxSizing = "border-box";
 
-      sandbox.appendChild(clone);
-      document.body.appendChild(sandbox);
+      container.appendChild(clone);
+      document.body.appendChild(container);
 
-      // Force synchronous DOM reflow
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Brief pause for browser reflow
+      await new Promise(resolve => setTimeout(resolve, 150));
 
-      // 3. Get exact content bounding height
-      const contentHeight = Math.ceil(clone.firstElementChild?.getBoundingClientRect().height || clone.getBoundingClientRect().height);
+      // 3. Measure accurate content height (first child node inside resume-preview-id)
+      const targetChild = clone.firstElementChild || clone;
+      const contentHeight = Math.ceil(targetChild.getBoundingClientRect().height);
 
-      // 4. Render canvas at full 794px scale resolution
+      // 4. Render html2canvas
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
@@ -256,18 +255,17 @@ const ResumeBuilder = () => {
         scrollY: 0
       });
 
-      // Remove temporary DOM node
-      document.body.removeChild(sandbox);
+      document.body.removeChild(container);
 
-      // 5. Build proportional jsPDF format matching actual content length
+      // 5. Build dynamic-height PDF matching image pixel height
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const pdfWidth = 210; // Standard A4 width in mm
-      const pdfHeight = (contentHeight * pdfWidth) / 794; // Exactly proportional height in mm
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (contentHeight * pdfWidth) / 794;
 
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [pdfWidth, pdfHeight] // Dynamic PDF canvas size stops right where content ends
+        format: [pdfWidth, pdfHeight]
       });
 
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
@@ -281,7 +279,7 @@ const ResumeBuilder = () => {
       setIsDownloading(false);
     }
   };
-
+  
   // Loading Guard
   if (!resumeData) {
     return (

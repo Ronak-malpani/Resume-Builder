@@ -36,29 +36,29 @@ const ClassicTemplate = ({ data, accentColor }) => {
     const hasEducation = data.education && data.education.length > 0 && data.education.some(edu => edu.institution?.trim());
 
     return (
-        // A4 CONTAINER (using h-auto to dynamically collapse around content)
-        <div className="w-[210mm] h-auto mx-auto px-8 py-10 bg-white text-gray-800 shadow-lg font-serif print:shadow-none overflow-hidden wrap-break-word">
+        // EXACT FIXED 794px CONTAINER (Avoids mm conversion rounding glitches in html2canvas)
+        <div className="w-[794px] max-w-[794px] box-border px-8 py-8 bg-white text-gray-800 font-serif overflow-hidden break-words">
             
             {/* HEADER SECTION */}
             <header className="text-center mb-6 pb-4 border-b-2" style={{ borderColor: accentColor }}>
                 <h1 className="text-3xl font-bold mb-2 uppercase tracking-tight" style={{ color: accentColor }}>
                     {data.personal_info?.full_name || "Your Name"}
                 </h1>
-                <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-[12px] text-gray-600 font-medium">
+                <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-1 text-[12px] text-gray-600 font-medium">
                     {data.personal_info?.email && (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                             <Mail size={13} style={{ color: accentColor }}/>
-                            {data.personal_info.email}
+                            <span>{data.personal_info.email}</span>
                         </div>
                     )}
                     {data.personal_info?.phone && (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                             <Phone size={13} style={{ color: accentColor }}/>
-                            {data.personal_info.phone}
+                            <span>{data.personal_info.phone}</span>
                         </div>
                     )}
                     {data.personal_info?.linkedin && (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                             <Linkedin size={13} style={{ color: accentColor }}/>
                             <span className="text-gray-800">
                                 {data.personal_info.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '')}
@@ -88,12 +88,13 @@ const ClassicTemplate = ({ data, accentColor }) => {
                     </h2>
                     <div className="space-y-4">
                         {data.experience.map((exp, index) => (
-                            <div key={index}>
-                                <div className="flex justify-between items-baseline mb-0">
-                                    <h3 className="text-[14px] font-bold text-gray-900 uppercase">
+                            <div key={index} className="w-full">
+                                {/* FIX: flex row with min-w-0 and shrink-0 date prevents right edge cutoff */}
+                                <div className="flex justify-between items-baseline mb-0 gap-2 w-full">
+                                    <h3 className="text-[14px] font-bold text-gray-900 uppercase min-w-0 truncate">
                                         {exp.position || "Position Title"}
                                     </h3>
-                                    <span className="text-[10px] font-bold text-gray-500 tabular-nums uppercase">
+                                    <span className="text-[10px] font-bold text-gray-500 tabular-nums uppercase whitespace-nowrap shrink-0 text-right">
                                         {formatDate(exp.startDate || exp.start_date)} — {exp.is_current ? "Present" : formatDate(exp.endDate || exp.end_date)}
                                     </span>
                                 </div>
@@ -115,7 +116,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
                     <h2 className="text-md font-bold mb-3 border-b uppercase tracking-widest" style={{ color: accentColor }}>
                         Key Projects
                     </h2>
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-3 w-full">
                         {data.project.map((proj, index) => (
                             <div key={index} className="pl-3 border-l-2" style={{ borderColor: `${accentColor}40` }}>
                                 <h3 className="font-bold text-gray-900 text-[13px] uppercase">{proj.name}</h3>
@@ -129,7 +130,7 @@ const ClassicTemplate = ({ data, accentColor }) => {
             )}
 
             {/* DYNAMIC GRID: Education and Skills */}
-            <div className="resume-grid border-t pt-4" style={{ borderColor: `${accentColor}20` }}>
+            <div className="resume-grid border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-4" style={{ borderColor: `${accentColor}20` }}>
                 {/* EDUCATION */}
                 {hasEducation && (
                     <section className="mb-4">
@@ -138,15 +139,15 @@ const ClassicTemplate = ({ data, accentColor }) => {
                         </h2>
                         <div className="space-y-3">
                             {data.education.map((edu, index) => edu.institution && (
-                                <div key={index} className="flex justify-between items-start gap-2">
-                                    <div className="flex-1">
+                                <div key={index} className="flex justify-between items-start gap-2 w-full">
+                                    <div className="min-w-0 flex-1">
                                         <h3 className="font-bold text-[13px] text-gray-900 leading-tight">
                                             {edu.degree} {edu.field ? `in ${edu.field}` : ""}
                                         </h3>
                                         <p className="text-[11px] text-gray-700">{edu.institution}</p>
                                         {edu.gpa && <p className="text-[10px] text-gray-500">GPA: <span className="font-bold">{edu.gpa}</span></p>}
                                     </div>
-                                    <span className="text-[10px] font-bold text-gray-400 tabular-nums whitespace-nowrap">
+                                    <span className="text-[10px] font-bold text-gray-400 tabular-nums whitespace-nowrap shrink-0 text-right">
                                         {formatDate(edu.graduationDate || edu.graduation_date)}
                                     </span>
                                 </div>
@@ -161,9 +162,9 @@ const ClassicTemplate = ({ data, accentColor }) => {
                         <h2 className="text-md font-bold mb-2 uppercase tracking-widest" style={{ color: accentColor }}>
                             Technical Skills
                         </h2>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1.5 w-full">
                             {data.skills.map((skill, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-700 border border-gray-100 rounded text-[10px] font-medium leading-none">
+                                <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-700 border border-gray-100 rounded text-[10px] font-medium leading-none shrink-0">
                                     {skill}
                                 </span>
                             ))}
