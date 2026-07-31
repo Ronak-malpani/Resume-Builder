@@ -212,7 +212,7 @@ const ResumeBuilder = () => {
     try {
       await document.fonts.ready;
 
-      // 1. Isolated off-screen container
+      // 1. Setup isolated off-screen wrapper anchored strictly to 794px
       const container = document.createElement("div");
       container.style.position = "fixed";
       container.style.top = "0";
@@ -222,7 +222,7 @@ const ResumeBuilder = () => {
       container.style.zIndex = "-9999";
       container.style.overflow = "hidden";
 
-      // 2. Clone setup
+      // 2. Clone the element and clean wrapper constraints
       const clone = element.cloneNode(true);
       clone.style.transform = "none";
       clone.style.width = "794px";
@@ -235,18 +235,34 @@ const ResumeBuilder = () => {
       clone.style.boxSizing = "border-box";
       clone.style.border = "none";
       clone.style.boxShadow = "none";
-      clone.style.overflow = "hidden";
+
+      // 3. Inject print fix style overrides directly to force right-alignment bounds inside clone
+      const styleOverride = document.createElement("style");
+      styleOverride.innerHTML = `
+        * { box-sizing: border-box !important; }
+        #resume-preview-id, #resume-preview-id * {
+          max-width: 100% !important;
+        }
+        .flex { display: flex !important; }
+        .justify-between { justify-content: space-between !important; }
+        .whitespace-nowrap { whitespace: nowrap !important; }
+      `;
+      clone.appendChild(styleOverride);
 
       container.appendChild(clone);
       document.body.appendChild(container);
 
-      // Delay for DOM reflow
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Brief pause for browser layout recalculation
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      // 3. Exact measurement of content bottom boundary
-      const contentHeight = Math.ceil(clone.scrollHeight || clone.getBoundingClientRect().height);
+      // 4. Calculate actual content height dynamically (no bottom whitespace)
+      const contentHeight = Math.max(
+        clone.scrollHeight,
+        clone.offsetHeight,
+        Math.ceil(clone.getBoundingClientRect().height)
+      );
 
-      // 4. Render canvas snapshot cropped exactly at contentHeight
+      // 5. Render html2canvas with matching 794px viewport scale
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
@@ -259,9 +275,10 @@ const ResumeBuilder = () => {
         scrollY: 0
       });
 
+      // Cleanup off-screen container
       document.body.removeChild(container);
 
-      // 5. Generate PDF page matching exact height ratio
+      // 6. Output PDF matching exact height ratio
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
       const pdfWidth = 210; // Standard A4 width in mm
       const pdfHeight = (contentHeight * pdfWidth) / 794;
