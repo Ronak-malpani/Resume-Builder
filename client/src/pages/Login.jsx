@@ -147,13 +147,13 @@ const Login = () => {
                 <button 
                     type="submit" 
                     disabled={loading}
-                    className="mt-2 w-full h-11 rounded-full text-white bg-green-500 hover:bg-green-600 active:scale-[0.99] transition-all font-medium flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                >
+                    className="mt-2 w-full h-12 rounded-full text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] transition-all font-semibold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2.5 disabled:opacity-80 disabled:cursor-not-allowed cursor-pointer"
+                    >
                     {loading ? (
-                        <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>Processing...</span>
-                        </>
+                        <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin text-white" />
+                            <span className="text-sm font-medium animate-pulse">Processing...</span>
+                        </div>
                     ) : (
                         <span>{state === "login" ? "Login" : "Sign up"}</span>
                     )}
