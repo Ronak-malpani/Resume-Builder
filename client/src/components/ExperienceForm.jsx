@@ -106,16 +106,36 @@ const ExperienceForm = ({ data, onChange }) => {
               </label>
 
               <div className="space-y-2">
-                <div className='flex items-center justify-between'>
-                  <label className='flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded'>Job Description</label>
-                  <button type="button" onClick={() => generateDescription(index)} disabled={generatingIndex === index || !experience.position || !experience.company} className='flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50'>
-                    {generatingIndex === index ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className='w-3 h-3' />}
-                    Enhance with AI
-                  </button>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-gray-700">Job Description</label>
+                      <button 
+                        type="button" 
+                        onClick={() => generateDescription(index)} 
+                        disabled={generatingIndex === index || (!experience.position && !experience.company)} 
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200/60 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                      >
+                        {generatingIndex === index ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
+                            <span className="animate-pulse">Enhancing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                            <span>Enhance with AI</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
 
-                <textarea value={experience.description || ""} onChange={(e) => updateExperience(index, "description", e.target.value)} rows={4} className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 resize-none outline-none focus:ring-1 focus:ring-purple-500" placeholder="Describe your key responsibilities and achievements..." />
-              </div>
+                    <textarea 
+                      value={experience.description || ""} 
+                      onChange={(e) => updateExperience(index, "description", e.target.value)} 
+                      rows={4} 
+                      className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 resize-none outline-none focus:ring-1 focus:ring-purple-500" 
+                      placeholder="Describe your key responsibilities and achievements..." 
+                    />
+                  </div>
             </div>
           ))}
         </div>
