@@ -64,7 +64,7 @@ const ResumeBuilder = () => {
       if (clientWidth === 0) return;
 
       const scale = clientWidth / 794; 
-      const clampedScale = Math.min(Math.max(scale, 0.45), 0.95);
+      const clampedScale = Math.min(Math.max(scale, 0.40), 1);
       setPreviewScale(clampedScale);
 
       if (previewContentRef.current) {
@@ -253,7 +253,7 @@ const ResumeBuilder = () => {
         logging: false,
         width: 794,
         height: contentHeight,
-        windowWidth: 794,   // Strictly set to 794px to match capture width
+        windowWidth: 794,
         windowHeight: contentHeight,
         scrollX: 0,
         scrollY: 0
@@ -409,12 +409,12 @@ const ResumeBuilder = () => {
               marginBottom: previewHeight ? `-${previewHeight * (1 - previewScale)}px` : '0px'
             }}
           >
-            {/* EXACT 794px PREVIEW NODE */}
+            {/* EXACT 794px PREVIEW NODE (A4 Anchored Layout) */}
             <div 
               id="resume-preview-id"
               ref={previewContentRef}
               onClick={handlePreviewClick}
-              className="bg-white shadow-md border border-slate-200 rounded-xs cursor-pointer h-fit min-h-0 overflow-hidden box-border w-[794px] min-w-[794px] max-w-[794px]"
+              className="bg-white shadow-xl border border-slate-100 rounded-sm cursor-pointer min-h-[1123px] h-fit overflow-hidden box-border w-[794px] min-w-[794px] max-w-[794px]"
             >
                {debouncedResumeData && (
                  <ResumePreview 
