@@ -97,18 +97,23 @@ const ProjectForm = ({ data, onChange }) => {
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none resize-none whitespace-pre-wrap"
                 />
                 <button
-                  type="button"
-                  onClick={() => handleEnhance(index, project.description)}
-                  disabled={loadingIndex === index || !project.description}
-                  className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 text-[10px] bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50 transition-colors"
-                >
-                  {loadingIndex === index ? (
-                    <Loader2 className="size-3 animate-spin" />
-                  ) : (
-                    <Sparkles className="size-3" />
-                  )}
-                  AI Enhance
-                </button>
+                    type="button"
+                    onClick={() => handleEnhance(index, project.description)}
+                    disabled={loadingIndex === index || !project.description}
+                    className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200/60 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                  >
+                    {loadingIndex === index ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
+                        <span className="animate-pulse">Enhancing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                        <span>AI Enhance</span>
+                      </>
+                    )}
+                  </button>
               </div>
             </div>
           </div>
