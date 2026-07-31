@@ -34,7 +34,7 @@ const ResumeBuilder = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.55);
-  const [previewHeight, setPreviewHeight] = useState(1123);
+  const [previewHeight, setPreviewHeight] = useState(0);
 
   // Exact Numeric Font Size State
   const [fontSize, setFontSize] = useState(12);
@@ -56,7 +56,7 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[activeSectionIndex];
 
-  // Precision scale & height calculation
+  // Precision scale & dynamic height calculation
   useEffect(() => {
     const updateDimensions = () => {
       if (!previewBoxRef.current) return;
@@ -68,7 +68,7 @@ const ResumeBuilder = () => {
       setPreviewScale(clampedScale);
 
       if (previewContentRef.current) {
-        setPreviewHeight(previewContentRef.current.offsetHeight || 0);
+        setPreviewHeight(previewContentRef.current.scrollHeight || previewContentRef.current.offsetHeight || 0);
       }
     };
 
@@ -201,7 +201,7 @@ const ResumeBuilder = () => {
     setResumeData(prev => ({ ...prev, public: !prev?.public }));
   };
 
-  // 4. BULLETPROOF PDF EXPORT
+  // 4. BULLETPROOF PDF EXPORT WITH DYNAMIC HEIGHT
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -243,10 +243,10 @@ const ResumeBuilder = () => {
       // Delay for DOM reflow
       await new Promise(resolve => setTimeout(resolve, 150));
 
-      // 3. Precise content height calculation
+      // 3. Exact measurement of content bottom boundary
       const contentHeight = Math.ceil(clone.scrollHeight || clone.getBoundingClientRect().height);
 
-      // 4. Render canvas with exact matching width and window bounds
+      // 4. Render canvas snapshot cropped exactly at contentHeight
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
@@ -261,7 +261,7 @@ const ResumeBuilder = () => {
 
       document.body.removeChild(container);
 
-      // 5. Generate mm-proportional PDF
+      // 5. Generate PDF page matching exact height ratio
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
       const pdfWidth = 210; // Standard A4 width in mm
       const pdfHeight = (contentHeight * pdfWidth) / 794;
@@ -409,12 +409,12 @@ const ResumeBuilder = () => {
               marginBottom: previewHeight ? `-${previewHeight * (1 - previewScale)}px` : '0px'
             }}
           >
-            {/* EXACT 794px PREVIEW NODE (A4 Anchored Layout) */}
+            {/* DYNAMIC HEIGHT PREVIEW NODE */}
             <div 
               id="resume-preview-id"
               ref={previewContentRef}
               onClick={handlePreviewClick}
-              className="bg-white shadow-xl border border-slate-100 rounded-sm cursor-pointer min-h-[1123px] h-fit overflow-hidden box-border w-[794px] min-w-[794px] max-w-[794px]"
+              className="bg-white shadow-xl border border-slate-100 rounded-sm cursor-pointer h-auto min-h-0 overflow-hidden box-border w-[794px] min-w-[794px] max-w-[794px]"
             >
                {debouncedResumeData && (
                  <ResumePreview 
