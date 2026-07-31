@@ -201,7 +201,7 @@ const ResumeBuilder = () => {
     setResumeData(prev => ({ ...prev, public: !prev?.public }));
   };
 
-  // 4. BULLETPROOF PDF EXPORT WITH DYNAMIC HEIGHT
+  // BULLETPROOF DIRECT-DOM SNAPSHOT (NO CLONING SHIFT)
   const downloadResume = async () => {
     const element = document.getElementById("resume-preview-id");
     if (!element) return toast.error("Preview not ready");
@@ -209,61 +209,30 @@ const ResumeBuilder = () => {
     setIsDownloading(true);
     const toastId = toast.loading("Generating PDF...");
 
+    // Store original scaling and parent styles to restore right after capture
+    const parentContainer = previewBoxRef.current;
+    const originalScale = previewScale;
+    const originalHeight = previewHeight;
+
     try {
       await document.fonts.ready;
 
-      // 1. Setup isolated off-screen wrapper anchored strictly to 794px
-      const container = document.createElement("div");
-      container.style.position = "fixed";
-      container.style.top = "0";
-      container.style.left = "-9999px";
-      container.style.width = "794px"; 
-      container.style.backgroundColor = "#ffffff";
-      container.style.zIndex = "-9999";
-      container.style.overflow = "hidden";
+      // 1. Momentarily set live preview element to scale(1) in DOM for exact parity
+      const scaleWrapper = element.parentElement;
+      if (scaleWrapper) {
+        scaleWrapper.style.transform = "scale(1)";
+        scaleWrapper.style.marginBottom = "0px";
+      }
 
-      // 2. Clone the element and clean wrapper constraints
-      const clone = element.cloneNode(true);
-      clone.style.transform = "none";
-      clone.style.width = "794px";
-      clone.style.minWidth = "794px";
-      clone.style.maxWidth = "794px";
-      clone.style.height = "auto";
-      clone.style.minHeight = "0px";
-      clone.style.margin = "0";
-      clone.style.padding = "0";
-      clone.style.boxSizing = "border-box";
-      clone.style.border = "none";
-      clone.style.boxShadow = "none";
+      // Force synchronous DOM reflow
+      void element.offsetHeight;
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      // 3. Inject print fix style overrides directly to force right-alignment bounds inside clone
-      const styleOverride = document.createElement("style");
-      styleOverride.innerHTML = `
-        * { box-sizing: border-box !important; }
-        #resume-preview-id, #resume-preview-id * {
-          max-width: 100% !important;
-        }
-        .flex { display: flex !important; }
-        .justify-between { justify-content: space-between !important; }
-        .whitespace-nowrap { whitespace: nowrap !important; }
-      `;
-      clone.appendChild(styleOverride);
+      // 2. Measure actual tightly-wrapped height
+      const contentHeight = Math.ceil(element.scrollHeight || element.offsetHeight);
 
-      container.appendChild(clone);
-      document.body.appendChild(container);
-
-      // Brief pause for browser layout recalculation
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // 4. Calculate actual content height dynamically (no bottom whitespace)
-      const contentHeight = Math.max(
-        clone.scrollHeight,
-        clone.offsetHeight,
-        Math.ceil(clone.getBoundingClientRect().height)
-      );
-
-      // 5. Render html2canvas with matching 794px viewport scale
-      const canvas = await html2canvas(clone, {
+      // 3. Render Canvas directly from the active, perfectly styled element
+      const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
@@ -272,15 +241,26 @@ const ResumeBuilder = () => {
         windowWidth: 794,
         windowHeight: contentHeight,
         scrollX: 0,
-        scrollY: 0
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById("resume-preview-id");
+          if (clonedElement) {
+            clonedElement.style.height = `${contentHeight}px`;
+            clonedElement.style.minHeight = "0px";
+            clonedElement.style.boxSizing = "border-box";
+          }
+        }
       });
 
-      // Cleanup off-screen container
-      document.body.removeChild(container);
+      // 4. Instantly restore preview UI scale back to user's view
+      if (scaleWrapper) {
+        scaleWrapper.style.transform = `scale(${originalScale})`;
+        scaleWrapper.style.marginBottom = originalHeight ? `-${originalHeight * (1 - originalScale)}px` : '0px';
+      }
 
-      // 6. Output PDF matching exact height ratio
+      // 5. Generate mm-proportional PDF matching actual content height
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const pdfWidth = 210; // Standard A4 width in mm
+      const pdfWidth = 210; // A4 width in mm
       const pdfHeight = (contentHeight * pdfWidth) / 794;
 
       const pdf = new jsPDF({
@@ -296,6 +276,13 @@ const ResumeBuilder = () => {
     } catch (e) {
       console.error("PDF Export Error:", e);
       toast.error("Download failed. Please try again.", { id: toastId });
+
+      // Fallback restore if canvas fails mid-generation
+      const scaleWrapper = element.parentElement;
+      if (scaleWrapper) {
+        scaleWrapper.style.transform = `scale(${originalScale})`;
+        scaleWrapper.style.marginBottom = originalHeight ? `-${originalHeight * (1 - originalScale)}px` : '0px';
+      }
     } finally {
       setIsDownloading(false);
     }
