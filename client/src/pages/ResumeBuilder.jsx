@@ -249,7 +249,7 @@ const ResumeBuilder = () => {
         logging: false,
         width: 794,
         height: contentHeight,
-        windowWidth: 794,
+        windowWidth: 1200,
         windowHeight: contentHeight,
         scrollX: 0,
         scrollY: 0
@@ -279,7 +279,7 @@ const ResumeBuilder = () => {
       setIsDownloading(false);
     }
   };
-  
+
   // Loading Guard
   if (!resumeData) {
     return (
